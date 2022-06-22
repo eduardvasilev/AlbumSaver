@@ -1,5 +1,6 @@
 ﻿using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -39,8 +40,34 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         return;
                     }
-
                     var youtube = new YoutubeClient();
+
+
+                    if (messageText.StartsWith("/song"))
+                    {
+                        Regex regex = new Regex(@"(?<=\/song\s)(.*)");
+                        string songName = regex.Match(messageText).Value;
+
+                        var songs = await youtube.Search.GetVideosAsync(songName, cancellationToken);
+
+                        VideoSearchResult videoSearchResult = songs.FirstOrDefault();
+                        {
+                            if (videoSearchResult != null)
+                            {
+                                var streamManifest = await youtube.Videos.Streams.GetManifestAsync(VideoId.Parse(videoSearchResult.Id), cancellationToken);
+
+                                IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+
+                                Stream stream = await youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
+
+                                await _botService.Client.SendAudioAsync(chatId,
+                                    new InputMedia(stream, videoSearchResult.Title), cancellationToken: cancellationToken);
+
+                            }
+                        }
+                        return;
+                    }
+
 
                     var result = await youtube.Search.GetPlaylistsAsync(messageText, cancellationToken);
                     PlaylistSearchResult playlistSearchResult = result.FirstOrDefault();
