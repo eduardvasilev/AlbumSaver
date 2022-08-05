@@ -58,15 +58,23 @@ namespace YTMusicDownloader.WebApi.Services
 
                 if (inputText.StartsWith("/song"))
                 {
-                    await SendSong(chatId, inputText, cancellationToken);
+
+                    await _botService.Client.SendTextMessageAsync(chatId, "Please, type a song name", replyMarkup:
+                        new ForceReplyMarkup(), cancellationToken: cancellationToken);
                     return;
                 }
 
-                await SendAlbum(inputText, isCallback, message, chatId, cancellationToken);
+                if (message?.ReplyToMessage != null && message.ReplyToMessage.Text == "Please, type a song name")
+                {
+                    await SendSongAsync(chatId, inputText, cancellationToken);
+                    return;
+                }
+
+                await SendAlbumAsync(inputText, isCallback, message, chatId, cancellationToken);
             }
         }
 
-        private async Task SendAlbum(string inputText, bool isCallback, Message message, long chatId,
+        private async Task SendAlbumAsync(string inputText, bool isCallback, Message message, long chatId,
             CancellationToken cancellationToken)
         {
             var result = await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken);
@@ -91,11 +99,8 @@ namespace YTMusicDownloader.WebApi.Services
             }
         }
 
-        private async Task SendSong(long chatId, string searchText, CancellationToken cancellationToken)
+        private async Task SendSongAsync(long chatId, string songName, CancellationToken cancellationToken)
         {
-            Regex regex = new Regex(@"(?<=\/song\s)(.*)");
-            string songName = regex.Match(searchText).Value;
-
             var songs = await _youtube.Search.GetVideosAsync(songName, cancellationToken);
 
             VideoSearchResult videoSearchResult = songs.FirstOrDefault();
@@ -122,10 +127,10 @@ namespace YTMusicDownloader.WebApi.Services
                 "https://rss.applemarketingtools.com/api/v2/us/music/most-played/10/albums.json",
                 cancellationToken);
 
-            var results = await httpResponseMessage.Content.ReadFromJsonAsync<ItunesMostRecentModel>(cancellationToken: cancellationToken);
+            ItunesMostRecentModel? results = await httpResponseMessage.Content.ReadFromJsonAsync<ItunesMostRecentModel>(cancellationToken: cancellationToken);
 
             string albumsMessage = string.Empty;
-            for (var index = 0; index < results.Feed.Results.Count; index++)
+            for (var index = 0; index < 8; index++)
             {
                 var album = results.Feed.Results[index];
                 albumsMessage += $"{index + 1}. {album.ArtistName} - {album.Name} \n\r";
