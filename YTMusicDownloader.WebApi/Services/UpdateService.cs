@@ -104,7 +104,21 @@ namespace YTMusicDownloader.WebApi.Services
             }
             else
             {
-                CallbackItem callbackItem = JsonConvert.DeserializeObject<CallbackItem>(inputText) ?? new CallbackItem();
+                CallbackItem deserializeObject = null;
+                try
+                {
+                    deserializeObject = JsonConvert.DeserializeObject<CallbackItem>(inputText);
+                }
+                catch
+                {
+                    //
+                }
+
+                //todo remove this govnocode
+                CallbackItem callbackItem = deserializeObject ?? new CallbackItem
+                {
+                    Index = 0
+                };
 
                 var result = await _youtube.Search.GetPlaylistsAsync(callbackItem?.Name ?? inputText, cancellationToken);
 
@@ -175,7 +189,8 @@ namespace YTMusicDownloader.WebApi.Services
             await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
                 new InlineKeyboardMarkup(results.Feed.Results
                     .Select((x, index) =>
-                        InlineKeyboardButton.WithCallbackData((index + 1).ToString(), $"{x.ArtistName} {x.Name}"))), cancellationToken: cancellationToken);
+                        InlineKeyboardButton.WithCallbackData((index + 1).ToString(),
+                        $"{x.ArtistName} {x.Name}"))), cancellationToken: cancellationToken);
         }
 
         private async Task SendAudioAsync(long chatId, Stream stream, string title, CancellationToken cancellationToken)
