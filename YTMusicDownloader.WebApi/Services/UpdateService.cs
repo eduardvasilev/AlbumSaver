@@ -5,6 +5,7 @@ using System.Net.Http.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -37,6 +38,8 @@ namespace YTMusicDownloader.WebApi.Services
             var message = update.Message;
 
             bool isCallback = update.CallbackQuery != null;
+
+
             if (message?.Type == MessageType.Text || isCallback)
             {
 
@@ -77,26 +80,59 @@ namespace YTMusicDownloader.WebApi.Services
         private async Task SendAlbumAsync(string inputText, bool isCallback, Message message, long chatId,
             CancellationToken cancellationToken)
         {
-            var result = await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken);
-            PlaylistSearchResult playlistSearchResult = result.FirstOrDefault();
-            if (playlistSearchResult != null)
+
+            if (!isCallback)
             {
-                var videos = await _youtube.Playlists.GetVideosAsync(PlaylistId.Parse(playlistSearchResult.Url),
-                    cancellationToken);
+                var result = await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken);
 
-                if (videos.Count > 20 && isCallback && message == null)
+                string albumsMessage = string.Empty;
+                for (var index = 0; index < 8; index++)
                 {
-                    await _botService.Client.SendTextMessageAsync(chatId,
-                        "You're trying to get more than 20 tracks. Are you sure?", replyMarkup:
-                        new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Yes!", inputText)), cancellationToken: cancellationToken);
-                    return;
+                    var album = result[index];
+                    albumsMessage += $"{index + 1}. {album.Title} ({album.Author}) \n\r";
                 }
 
-                foreach (PlaylistVideo playlistVideo in videos)
-                {
-                    await SendSongAsync(chatId, playlistVideo, cancellationToken);
-                }
+                await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
+                    new InlineKeyboardMarkup(result
+                        .Select((x, index) =>
+                            InlineKeyboardButton.WithCallbackData((index + 1).ToString(),
+                                JsonConvert.SerializeObject(new CallbackItem()
+                                {
+                                    Index = index,
+                                    Name = inputText
+                                })))), cancellationToken: cancellationToken);
             }
+            else
+            {
+                CallbackItem callbackItem = JsonConvert.DeserializeObject<CallbackItem>(inputText) ?? new CallbackItem();
+
+                var result = await _youtube.Search.GetPlaylistsAsync(callbackItem?.Name ?? inputText, cancellationToken);
+
+                 PlaylistSearchResult playlistSearchResult = result.ElementAtOrDefault(callbackItem.Index) ?? result.FirstOrDefault();
+
+                if (playlistSearchResult != null)
+                {
+                    var videos = await _youtube.Playlists.GetVideosAsync(PlaylistId.Parse(playlistSearchResult.Url),
+                        cancellationToken);
+
+                    if (videos.Count > 20 && message == null)
+                    {
+                        await _botService.Client.SendTextMessageAsync(chatId,
+                            "You're trying to get more than 20 tracks. Are you sure?", replyMarkup:
+                            new InlineKeyboardMarkup(InlineKeyboardButton.WithCallbackData("Yes!", inputText)), cancellationToken: cancellationToken);
+                        return;
+                    }
+
+                    foreach (PlaylistVideo playlistVideo in videos)
+                    {
+                        await SendSongAsync(chatId, playlistVideo, cancellationToken);
+                    }
+                }
+
+
+            }
+
+          
         }
 
         private async Task SendSongAsync(long chatId, string songName, CancellationToken cancellationToken)
