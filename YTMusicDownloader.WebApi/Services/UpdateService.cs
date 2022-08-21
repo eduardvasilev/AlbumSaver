@@ -1,11 +1,10 @@
-﻿using System.IO;
+﻿using Newtonsoft.Json;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
@@ -86,10 +85,11 @@ namespace YTMusicDownloader.WebApi.Services
                 var result = await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken);
 
                 string albumsMessage = string.Empty;
-                for (var index = 0; index < 8; index++)
+                var count = result.Count < 8 ? result.Count : 8;
+                for (var index = 0; index < count; index++)
                 {
                     var album = result[index];
-                    albumsMessage += $"{index + 1}. {album.Title} ({album.Author}) \n\r";
+                    albumsMessage += $"{index + 1}. {album.Title} \n\r";
                 }
 
                 await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
@@ -180,7 +180,8 @@ namespace YTMusicDownloader.WebApi.Services
             ItunesMostRecentModel? results = await httpResponseMessage.Content.ReadFromJsonAsync<ItunesMostRecentModel>(cancellationToken: cancellationToken);
 
             string albumsMessage = string.Empty;
-            for (var index = 0; index < 8; index++)
+            var count = (results?.Feed.Results.Count ?? 0) < 8 ? results.Feed.Results.Count : 8;
+            for (var index = 0; index < count; index++)
             {
                 var album = results.Feed.Results[index];
                 albumsMessage += $"{index + 1}. {album.ArtistName} - {album.Name} \n\r";
