@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -132,10 +133,19 @@ namespace YTMusicDownloader.WebApi.Services
                         return;
                     }
 
+                    string thumbnail = playlistSearchResult.Thumbnails.LastOrDefault()?.Url;
 
-                    foreach (PlaylistVideo playlistVideo in videos)
+                    if (videos.Any())
                     {
-                        await SendSongAsync(chatId, playlistVideo, cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(thumbnail))
+                        {
+                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken);
+                        }
+
+                        foreach (PlaylistVideo playlistVideo in videos)
+                        {
+                            await SendSongAsync(chatId, playlistVideo, cancellationToken);
+                        }
                     }
                 }
             }
@@ -165,7 +175,7 @@ namespace YTMusicDownloader.WebApi.Services
                             Page = page
                         }))).ToList();
 
-            if (playlistSearchResults.Count > page * 6)
+            if (result.Count >= 6)
             {
                 inlineKeyboardButtons = inlineKeyboardButtons.Append(InlineKeyboardButton.WithCallbackData(">", JsonConvert.SerializeObject(new CallbackItem()
                 {
