@@ -5,11 +5,16 @@ namespace YTMusicDownloader.WebApi.Services
 {
     public class BotService : IBotService
     {
+        public BotService()
+        {
+            
+        }
+
         public BotService(IOptions<BotConfiguration> config)
         {
             Client = new TelegramBotClient(config.Value.BotToken);
         }
 
-        public TelegramBotClient Client { get;}
+        public TelegramBotClient Client { get; set; }
     }
 }
