@@ -21,6 +21,7 @@ namespace YTMusicDownloader.WebApi
         {
             services.AddScoped<IUpdateService, UpdateService>();
             services.AddSingleton<IBotService, BotService>();
+            services.AddScoped<ITelegramService, TelegramService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
 
             services.AddControllers()
