@@ -13,7 +13,7 @@ var serviceProvider = new ServiceCollection()
 
 var factory = (IHttpClientFactory)serviceProvider.GetService(typeof(IHttpClientFactory));
 
-var botClient = new TelegramBotClient("");
+var botClient = new TelegramBotClient("5787391062:AAHDb2sEtWywdg5D6nzDblX7pBuKGg9NXDA");
 
 UpdateService updateService = new UpdateService(new BotService()
 {

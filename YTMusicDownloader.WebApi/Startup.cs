@@ -39,7 +39,10 @@ namespace YTMusicDownloader.WebApi
             }
 
             app.UseRouting();
-            app.UseCors();
+            app.UseCors(x => x
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader());
 
 
             app.UseEndpoints(endpoints =>
