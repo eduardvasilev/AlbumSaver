@@ -214,7 +214,7 @@ namespace YTMusicDownloader.WebApi.Services
             }
         }
 
-        private async Task SendSongAsync(long chatId, IVideo video, CancellationToken cancellationToken)
+        public async Task SendSongAsync(long chatId, IVideo video, CancellationToken cancellationToken)
         {
             var videoId = VideoId.Parse(video.Id);
 
