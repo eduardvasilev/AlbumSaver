@@ -55,7 +55,8 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 if (!string.IsNullOrWhiteSpace(thumbnail))
                 {
-                    await _botService.Client.SendPhotoAsync(request.UserId, new InputOnlineFile(thumbnail));
+                    await _botService.Client.SendPhotoAsync(request.UserId,
+                        new InputOnlineFile(thumbnail));
                 }
 
                 foreach (PlaylistVideo playlistVideo in videos)

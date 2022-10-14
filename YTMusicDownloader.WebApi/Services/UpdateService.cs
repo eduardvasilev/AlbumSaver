@@ -263,7 +263,7 @@ namespace YTMusicDownloader.WebApi.Services
         {
             StreamManifest streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
 
-            IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+            IStreamInfo streamInfo = streamManifest.GetAudioStreams().GetWithHighestBitrate();
 
             return await _youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
         }
