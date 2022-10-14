@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using Telegram.Bot.Types.InputFiles;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -50,18 +51,19 @@ namespace YTMusicDownloader.WebApi.Services
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl));
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
+            InputMedia inputOnlineFile = new InputMedia(thumbnail);
 
             if (videos.Any())
             {
                 if (!string.IsNullOrWhiteSpace(thumbnail))
                 {
                     await _botService.Client.SendPhotoAsync(request.UserId,
-                        new InputOnlineFile(thumbnail));
+                        inputOnlineFile);
                 }
 
                 foreach (PlaylistVideo playlistVideo in videos)
                 {
-                    await _updateService.SendSongAsync(request.UserId, playlistVideo, result.Thumbnails.LastOrDefault()?.Url);
+                    await _updateService.SendSongAsync(request.UserId, playlistVideo, inputOnlineFile);
                 }
             }
         }
