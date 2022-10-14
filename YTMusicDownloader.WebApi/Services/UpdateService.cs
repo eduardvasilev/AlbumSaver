@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.IO;
 using System.Linq;
@@ -18,6 +19,7 @@ using YoutubeExplode.Search;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YTMusicDownloader.WebApi.Model;
+using Author = YoutubeExplode.Common.Author;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -139,12 +141,12 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         if (!string.IsNullOrWhiteSpace(thumbnail))
                         {
-                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken);
+                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken, disableNotification: true);
                         }
 
                         foreach (PlaylistVideo playlistVideo in videos)
                         {
-                            await SendSongAsync(chatId, playlistVideo, cancellationToken);
+                            await SendSongAsync(chatId, playlistVideo, null, cancellationToken);
                         }
                     }
                 }
@@ -209,18 +211,18 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 if (videoSearchResult != null)
                 {
-                    await SendSongAsync(chatId, videoSearchResult, cancellationToken);
+                    await SendSongAsync(chatId, videoSearchResult, null,  cancellationToken);
                 }
             }
         }
 
-        public async Task SendSongAsync(long chatId, IVideo video, CancellationToken cancellationToken)
+        public async Task SendSongAsync(long chatId, IVideo video, string thump, CancellationToken cancellationToken)
         {
             var videoId = VideoId.Parse(video.Id);
 
             Stream stream = await GetAudioStreamAsync(videoId, cancellationToken);
 
-            await SendAudioAsync(chatId, stream, video.Title, cancellationToken);
+            await SendAudioAsync(chatId, stream, video.Title, video.Duration, thump, video.Author, cancellationToken);
         }
 
         private async Task SendActualAsync(long chatId, CancellationToken cancellationToken)
@@ -246,10 +248,15 @@ namespace YTMusicDownloader.WebApi.Services
                         $"{x.ArtistName} {x.Name}"))), cancellationToken: cancellationToken);
         }
 
-        private async Task SendAudioAsync(long chatId, Stream stream, string title, CancellationToken cancellationToken)
+        private async Task SendAudioAsync(long chatId, Stream stream, string title, TimeSpan? videoDuration,
+            string thump,
+            Author videoAuthor,
+            CancellationToken cancellationToken)
         {
-            await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), cancellationToken: cancellationToken);
-
+            await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), 
+                cancellationToken: cancellationToken,
+                duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null), parseMode: ParseMode.Html, thumb:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
+            
         }
 
         private async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)

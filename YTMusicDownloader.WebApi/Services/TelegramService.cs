@@ -60,7 +60,7 @@ namespace YTMusicDownloader.WebApi.Services
 
                 foreach (PlaylistVideo playlistVideo in videos)
                 {
-                    await _updateService.SendSongAsync(request.UserId, playlistVideo);
+                    await _updateService.SendSongAsync(request.UserId, playlistVideo, result.Thumbnails.LastOrDefault()?.Url);
                 }
             }
         }
