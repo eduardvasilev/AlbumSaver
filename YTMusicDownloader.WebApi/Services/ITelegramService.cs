@@ -8,6 +8,8 @@ namespace YTMusicDownloader.WebApi.Services
     public interface ITelegramService
     {
         Task<IEnumerable<YTMusicSearchResult>> Search(string query, int page, CancellationToken cancellationToken = default);
+        Task<IEnumerable<YTMusicSearchResult>> SearchTracks(string query, int page,
+            CancellationToken cancellationToken = default);
         Task SendAlbumAsync(DownloadRequest request);
     }
 }

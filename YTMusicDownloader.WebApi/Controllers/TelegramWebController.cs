@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using YTMusicDownloader.WebApi.Model;
 using YTMusicDownloader.WebApi.Services;
@@ -16,9 +17,16 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpGet("/search")]
-        public async Task<IActionResult> Get(string query, int page)
+        public async Task<IActionResult> Get(string query, int page, CancellationToken cancellationToken)
         {
-           return Ok(await _telegramService.Search(query, page));
+           return Ok(await _telegramService.Search(query, page, cancellationToken));
+        }
+
+
+        [HttpGet("/tracks")]
+        public async Task<IActionResult> Tracks(string query, int page, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.SearchTracks(query, page, cancellationToken));
         }
 
         [HttpPost("/download")]

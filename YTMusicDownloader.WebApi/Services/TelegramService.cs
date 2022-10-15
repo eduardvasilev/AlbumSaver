@@ -31,12 +31,28 @@ namespace YTMusicDownloader.WebApi.Services
             CancellationToken cancellationToken)
         {
             return (await _youtubeClient.Search
-                    .GetPlaylistsAsync(query, cancellationToken))
+                .GetPlaylistsAsync(query, cancellationToken))
                 .Skip(ElementsPerPageCount * page)
                 .Take(ElementsPerPageCount)
                 .Select(result => new YTMusicSearchResult
                 {
                     ImageUrl = result.Thumbnails.Last().Url,
+                    Title = result.Title,
+                    YouTubeMusicPlaylistUrl = result.Url
+                }).ToList();
+        }
+
+        public async Task<IEnumerable<YTMusicSearchResult>> SearchTracks(string query, int page,
+            CancellationToken cancellationToken)
+        {
+            var videoSearchResults = (await _youtubeClient.Search
+                .GetVideosAsync(query, cancellationToken));
+            return videoSearchResults
+                .Skip(ElementsPerPageCount * page)
+                .Take(ElementsPerPageCount)
+                .Select(result => new YTMusicSearchResult
+                {
+                    ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
                     Title = result.Title,
                     YouTubeMusicPlaylistUrl = result.Url
                 }).ToList();
@@ -52,6 +68,7 @@ namespace YTMusicDownloader.WebApi.Services
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
             InputMedia inputOnlineFile = new InputMedia(thumbnail);
+            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
 
             if (videos.Any())
             {
@@ -63,7 +80,7 @@ namespace YTMusicDownloader.WebApi.Services
 
                 foreach (PlaylistVideo playlistVideo in videos)
                 {
-                    await _updateService.SendSongAsync(request.UserId, playlistVideo, inputOnlineFile);
+                    await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
                 }
             }
         }
