@@ -19,6 +19,7 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly YoutubeClient _youtubeClient;
 
         private const int ElementsPerPageCount = 8;
+        private const int SongsPerPageCount = 10;
 
         public TelegramService(IUpdateService updateService, IBotService botService)
         {
@@ -48,8 +49,8 @@ namespace YTMusicDownloader.WebApi.Services
             var videoSearchResults = (await _youtubeClient.Search
                 .GetVideosAsync(query, cancellationToken));
             return videoSearchResults
-                .Skip(ElementsPerPageCount * page)
-                .Take(ElementsPerPageCount)
+                .Skip(SongsPerPageCount * page)
+                .Take(SongsPerPageCount)
                 .Select(result => new YTMusicSearchResult
                 {
                     ImageUrl = result.Thumbnails.LastOrDefault()?.Url,

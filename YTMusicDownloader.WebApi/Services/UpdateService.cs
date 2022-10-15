@@ -256,7 +256,8 @@ namespace YTMusicDownloader.WebApi.Services
         {
             await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), 
                 cancellationToken: cancellationToken,
-                duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null), parseMode: ParseMode.Html, thumb:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
+                duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null),
+                parseMode: ParseMode.Html, thumb: thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
             
         }
 
