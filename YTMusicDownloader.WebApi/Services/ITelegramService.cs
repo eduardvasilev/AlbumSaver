@@ -11,5 +11,6 @@ namespace YTMusicDownloader.WebApi.Services
         Task<IEnumerable<YTMusicSearchResult>> SearchTracks(string query, int page,
             CancellationToken cancellationToken = default);
         Task SendAlbumAsync(DownloadRequest request);
+        Task SendTrackAsync(DownloadRequest request);
     }
 }

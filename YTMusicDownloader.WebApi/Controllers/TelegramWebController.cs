@@ -30,16 +30,33 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpPost("/download")]
-        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId)
+        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, EntityType entityType = EntityType.Album)
         {
-            //TODO remove this workaround. Model should be passed in body
-            var model = new DownloadRequest
+
+            if (entityType == EntityType.Album)
             {
-                UserId = userId,
-                YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-            };
-            _telegramService.SendAlbumAsync(model);
-            return Ok();
+                //TODO remove this workaround. Model should be passed in body
+                var model = new DownloadRequest
+                {
+                    UserId = userId,
+                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                };
+                _telegramService.SendAlbumAsync(model);
+                return Ok();
+            }
+            else if (entityType == EntityType.Track)
+            {
+                //TODO remove this workaround. Model should be passed in body
+                var model = new DownloadRequest
+                {
+                    UserId = userId,
+                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                };
+                _telegramService.SendTrackAsync(model);
+                return Ok();
+            }
+
+            return BadRequest();
         }
     }
 }

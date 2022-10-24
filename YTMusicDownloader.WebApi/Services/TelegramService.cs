@@ -8,6 +8,7 @@ using Telegram.Bot.Types.InputFiles;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
+using YoutubeExplode.Videos;
 using YTMusicDownloader.WebApi.Model;
 
 namespace YTMusicDownloader.WebApi.Services
@@ -39,6 +40,7 @@ namespace YTMusicDownloader.WebApi.Services
                 {
                     ImageUrl = result.Thumbnails.Last().Url,
                     Title = result.Title,
+                    Author = result.Author?.ToString(),
                     YouTubeMusicPlaylistUrl = result.Url
                 }).ToList();
         }
@@ -55,6 +57,7 @@ namespace YTMusicDownloader.WebApi.Services
                 {
                     ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
                     Title = result.Title,
+                    Author = result.Author?.ToString(),
                     YouTubeMusicPlaylistUrl = result.Url
                 }).ToList();
         }
@@ -84,6 +87,14 @@ namespace YTMusicDownloader.WebApi.Services
                     await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
                 }
             }
+        }
+
+        public async Task SendTrackAsync(DownloadRequest request)
+        {
+            var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
+
+            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+            await _updateService.SendSongAsync(request.UserId, result, thumb);
         }
     }
 }

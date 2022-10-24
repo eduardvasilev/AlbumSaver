@@ -8,6 +8,7 @@ using System.Net.Http.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
@@ -81,7 +82,7 @@ namespace YTMusicDownloader.WebApi.Services
         }
 
         private async Task SendAlbumAsync(string inputText, bool isCallback, Message message, long chatId,
-            CancellationToken cancellationToken)
+                CancellationToken cancellationToken)
         {
             if (!isCallback)
             {
@@ -103,24 +104,24 @@ namespace YTMusicDownloader.WebApi.Services
                 {
                     if (deserializeObject.N)
                     {
-                        await SendSearchResilt(deserializeObject.Name, chatId, --deserializeObject.Page, cancellationToken);
+                        await SendSearchResilt(deserializeObject.Na, chatId, --deserializeObject.Pg, cancellationToken);
                         return;
                     }
 
-                    await SendSearchResilt(deserializeObject.Name, chatId, ++deserializeObject.Page, cancellationToken);
+                    await SendSearchResilt(deserializeObject.Na, chatId, ++deserializeObject.Pg, cancellationToken);
                     return;
                 }
 
                 //todo remove this govnocode
                 CallbackItem callbackItem = deserializeObject ?? new CallbackItem
                 {
-                    Index = 0
+                    I = 0
                 };
 
-                var result = (await _youtube.Search.GetPlaylistsAsync(callbackItem?.Name ?? inputText, cancellationToken))
-                    .Skip(callbackItem.Page * 6).Take(6).ToList();
+                var result = (await _youtube.Search.GetPlaylistsAsync(callbackItem.Na ?? inputText, cancellationToken))
+                    .Skip(callbackItem.Pg * 5).Take(5).ToList();
 
-                PlaylistSearchResult playlistSearchResult = result.ElementAtOrDefault(callbackItem.Index) ?? result.FirstOrDefault();
+                PlaylistSearchResult playlistSearchResult = result.ElementAtOrDefault(callbackItem.I) ?? result.FirstOrDefault();
 
                 if (playlistSearchResult != null)
                 {
@@ -141,7 +142,7 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         if (!string.IsNullOrWhiteSpace(thumbnail))
                         {
-                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken, disableNotification: true);
+                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken);
                         }
 
                         foreach (PlaylistVideo playlistVideo in videos)
@@ -157,10 +158,10 @@ namespace YTMusicDownloader.WebApi.Services
         {
             IReadOnlyList<PlaylistSearchResult> playlistSearchResults = (await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken));
             var result = playlistSearchResults
-                .Skip(page*6).Take(6).ToList();
+                .Skip(page * 5).Take(5).ToList();
 
             string albumsMessage = string.Empty;
-            var count = result.Count < 6 ? result.Count : 6;
+            var count = result.Count < 5 ? result.Count : 5;
             for (var index = 0; index < count; index++)
             {
                 var album = result[index];
@@ -172,19 +173,22 @@ namespace YTMusicDownloader.WebApi.Services
                     InlineKeyboardButton.WithCallbackData((index + 1).ToString(),
                         JsonConvert.SerializeObject(new CallbackItem()
                         {
-                            Index = index,
-                            Name = inputText,
-                            Page = page
+                            I = index,
+                            Na = inputText,
+                            Pg = page
+                        }, new JsonSerializerSettings
+                        {
+
                         }))).ToList();
 
-            if (result.Count >= 6)
+            if (result.Count >= 5)
             {
                 inlineKeyboardButtons = inlineKeyboardButtons.Append(InlineKeyboardButton.WithCallbackData(">", JsonConvert.SerializeObject(new CallbackItem()
                 {
-                    Index = -2,
-                    Name = inputText,
+                    I = -2,
+                    Na = inputText,
                     P = true,
-                    Page = page
+                    Pg = page
                 }))).ToList();
             }
 
@@ -192,17 +196,56 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 inlineKeyboardButtons = inlineKeyboardButtons.Prepend(InlineKeyboardButton.WithCallbackData("<", JsonConvert.SerializeObject(new CallbackItem()
                 {
-                    Index = -1,
-                    Name = inputText,
+                    I = -1,
+                    Na = inputText,
                     N = true,
-                    Page = page
+                    Pg = page
                 }))).ToList();
             }
 
-            await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
-                new InlineKeyboardMarkup(inlineKeyboardButtons), cancellationToken: cancellationToken);
+            try
+            {
+                await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
+                    new InlineKeyboardMarkup(inlineKeyboardButtons), cancellationToken: cancellationToken);
+            }
+            catch (ApiRequestException exception) when (exception.Message == "Bad Request: BUTTON_DATA_INVALID")
+            {
+                await SendFallback(inputText, chatId, cancellationToken, albumsMessage, inlineKeyboardButtons);
+            }
         }
 
+        private async Task SendFallback(string inputText, long chatId, CancellationToken cancellationToken,
+            string albumsMessage, List<InlineKeyboardButton> inlineKeyboardButtons)
+        {
+            List<InlineKeyboardButton> newButtons = new List<InlineKeyboardButton>();
+            foreach (var inlineKeyboardButton in inlineKeyboardButtons)
+            {
+                CallbackItem deserializeObject = JsonConvert.DeserializeObject<CallbackItem>(inlineKeyboardButton.CallbackData);
+                deserializeObject.Na = deserializeObject.Na.Substring(0, deserializeObject.Na.Length - 3);
+                string serializeObject = JsonConvert.SerializeObject(deserializeObject);
+                InlineKeyboardButton withCallbackData = InlineKeyboardButton.WithCallbackData(inlineKeyboardButton.Text, serializeObject);
+                newButtons.Add(withCallbackData);
+            }
+
+            try
+            {
+                var serializeObject = JsonConvert.SerializeObject(new CallbackItem()
+                {
+                    I = 0,
+                    Na = inputText,
+                    Pg = 0
+                });
+                await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
+                    new InlineKeyboardMarkup(newButtons),
+                    cancellationToken: cancellationToken);
+            }
+            catch (ApiRequestException exception) when (exception.Message == "Bad Request: BUTTON_DATA_INVALID")
+            {
+                await SendFallback(inputText, chatId, cancellationToken, albumsMessage,
+                    inlineKeyboardButtons);
+            }
+
+        }
         private async Task SendSongAsync(long chatId, string songName, CancellationToken cancellationToken)
         {
             var songs = await _youtube.Search.GetVideosAsync(songName, cancellationToken);
@@ -235,7 +278,7 @@ namespace YTMusicDownloader.WebApi.Services
             ItunesMostRecentModel? results = await httpResponseMessage.Content.ReadFromJsonAsync<ItunesMostRecentModel>(cancellationToken: cancellationToken);
 
             string albumsMessage = string.Empty;
-            var count = (results?.Feed.Results.Count ?? 0) < 6 ? results.Feed.Results.Count : 6;
+            var count = (results?.Feed.Results.Count ?? 0) < 5 ? results.Feed.Results.Count : 5;
             for (var index = 0; index < count; index++)
             {
                 var album = results.Feed.Results[index];
@@ -243,10 +286,10 @@ namespace YTMusicDownloader.WebApi.Services
             }
 
             await _botService.Client.SendTextMessageAsync(chatId, albumsMessage, replyMarkup:
-                new InlineKeyboardMarkup(results.Feed.Results
+                new InlineKeyboardMarkup(results.Feed.Results.Take(5)
                     .Select((x, index) =>
                         InlineKeyboardButton.WithCallbackData((index + 1).ToString(),
-                        $"{x.ArtistName} {x.Name}"))), cancellationToken: cancellationToken);
+                            $"{x.ArtistName} {x.Name}"))), cancellationToken: cancellationToken);
         }
 
         private async Task SendAudioAsync(long chatId, Stream stream, string title, TimeSpan? videoDuration,
@@ -257,7 +300,7 @@ namespace YTMusicDownloader.WebApi.Services
             await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), 
                 cancellationToken: cancellationToken,
                 duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null),
-                parseMode: ParseMode.Html, thumb: thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
+                parseMode: ParseMode.Html, thumb:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
             
         }
 
