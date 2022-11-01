@@ -118,7 +118,7 @@ namespace YTMusicDownloader.WebApi.Services
                     I = 0
                 };
 
-                var result = (await _youtube.Search.GetPlaylistsAsync(callbackItem.Na ?? inputText, cancellationToken))
+                var result = (await _youtube.Search.GetPlaylistsAsync(callbackItem.Na ?? inputText, false, null, cancellationToken))
                     .Skip(callbackItem.Pg * 5).Take(5).ToList();
 
                 PlaylistSearchResult playlistSearchResult = result.ElementAtOrDefault(callbackItem.I) ?? result.FirstOrDefault();
@@ -156,7 +156,7 @@ namespace YTMusicDownloader.WebApi.Services
 
         private async Task SendSearchResilt(string inputText, long chatId, int page, CancellationToken cancellationToken)
         {
-            IReadOnlyList<PlaylistSearchResult> playlistSearchResults = (await _youtube.Search.GetPlaylistsAsync(inputText, cancellationToken));
+            IReadOnlyList<PlaylistSearchResult> playlistSearchResults = (await _youtube.Search.GetPlaylistsAsync(inputText, false, null, cancellationToken));
             var result = playlistSearchResults
                 .Skip(page * 5).Take(5).ToList();
 
@@ -248,7 +248,7 @@ namespace YTMusicDownloader.WebApi.Services
         }
         private async Task SendSongAsync(long chatId, string songName, CancellationToken cancellationToken)
         {
-            var songs = await _youtube.Search.GetVideosAsync(songName, cancellationToken);
+            var songs = await _youtube.Search.GetVideosAsync(songName, false, null, cancellationToken);
 
             VideoSearchResult videoSearchResult = songs.FirstOrDefault();
             {

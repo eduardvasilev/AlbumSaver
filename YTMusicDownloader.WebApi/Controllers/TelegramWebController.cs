@@ -17,16 +17,20 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpGet("/search")]
-        public async Task<IActionResult> Get(string query, int page, CancellationToken cancellationToken)
+        public async Task<IActionResult> Get(string query, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
         {
-           return Ok(await _telegramService.Search(query, page, cancellationToken));
+           return Ok(await _telegramService.Search(query, continuation, continuationToken, token, cancellationToken));
         }
 
 
         [HttpGet("/tracks")]
-        public async Task<IActionResult> Tracks(string query, int page, CancellationToken cancellationToken)
+        public async Task<IActionResult> Tracks(string query, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.SearchTracks(query, page, cancellationToken));
+            return Ok(await _telegramService.SearchTracks(query, continuation, continuationToken, token, cancellationToken));
         }
 
         [HttpPost("/download")]

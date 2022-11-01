@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputFiles;
 using YoutubeExplode;
+using YoutubeExplode.Bridge;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
@@ -19,9 +20,6 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly IBotService _botService;
         private readonly YoutubeClient _youtubeClient;
 
-        private const int ElementsPerPageCount = 8;
-        private const int SongsPerPageCount = 10;
-
         public TelegramService(IUpdateService updateService, IBotService botService)
         {
             _updateService = updateService;
@@ -29,37 +27,71 @@ namespace YTMusicDownloader.WebApi.Services
             _youtubeClient = new YoutubeClient();
         }
 
-        public async Task<IEnumerable<YTMusicSearchResult>> Search(string query, int page,
+        public async Task<PagingResult> Search(string query,
+            bool continuation, 
+            string continuationToken,
+            string token,
             CancellationToken cancellationToken)
         {
-            return (await _youtubeClient.Search
-                .GetPlaylistsAsync(query, cancellationToken))
-                .Skip(ElementsPerPageCount * page)
-                .Take(ElementsPerPageCount)
-                .Select(result => new YTMusicSearchResult
-                {
-                    ImageUrl = result.Thumbnails.Last().Url,
-                    Title = result.Title,
-                    Author = result.Author?.ToString(),
-                    YouTubeMusicPlaylistUrl = result.Url
-                }).ToList();
+
+            ContinuationData continuationData = continuation ? new ContinuationData
+            {
+                ContinuationToken = new JValue(continuationToken),
+                Token = new JValue(token)
+            } : null;
+
+            var playlistSearchResults = await _youtubeClient.Search
+                .GetPlaylistsAsync(query, continuation, continuationData, cancellationToken);
+
+            return new PagingResult
+            {
+                Result = playlistSearchResults
+                    .Select(result => new YTMusicSearchResult
+                    {
+                        ImageUrl = result.Thumbnails.Last().Url,
+                        Title = result.Title,
+                        Author = result.Author?.ToString(),
+                        YouTubeMusicPlaylistUrl = result.Url,
+
+                    }).ToList(),
+                Token = _youtubeClient.Search.Token != null ? _youtubeClient.Search.Token.Value<string>() : null,
+                ContinuationToken = _youtubeClient.Search.ContinuationToken != null
+                    ? _youtubeClient.Search.ContinuationToken.Value<string>()
+                    : null,
+            };
         }
 
-        public async Task<IEnumerable<YTMusicSearchResult>> SearchTracks(string query, int page,
+        public async Task<PagingResult> SearchTracks(string query,
+            bool continuation,
+            string continuationToken,
+            string token,
             CancellationToken cancellationToken)
         {
+
+            ContinuationData continuationData = continuation ? new ContinuationData
+            {
+                ContinuationToken = new JValue(continuationToken),
+                Token = new JValue(token)
+            } : null;
+
             var videoSearchResults = (await _youtubeClient.Search
-                .GetVideosAsync(query, cancellationToken));
-            return videoSearchResults
-                .Skip(SongsPerPageCount * page)
-                .Take(SongsPerPageCount)
-                .Select(result => new YTMusicSearchResult
-                {
-                    ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
-                    Title = result.Title,
-                    Author = result.Author?.ToString(),
-                    YouTubeMusicPlaylistUrl = result.Url
-                }).ToList();
+                .GetVideosAsync(query, continuation, continuationData, cancellationToken));
+
+            return new PagingResult
+            {
+                Result = videoSearchResults
+                    .Select(result => new YTMusicSearchResult
+                    {
+                        ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
+                        Title = result.Title,
+                        Author = result.Author?.ToString(),
+                        YouTubeMusicPlaylistUrl = result.Url,
+                    }).ToList(),
+                Token = _youtubeClient.Search.Token != null ? _youtubeClient.Search.Token.Value<string>() : null,
+                ContinuationToken = _youtubeClient.Search.ContinuationToken != null
+                    ? _youtubeClient.Search.ContinuationToken.Value<string>()
+                    : null,
+            };
         }
 
         public async Task SendAlbumAsync(DownloadRequest request)
