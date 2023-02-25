@@ -1,7 +1,6 @@
 ﻿using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.InputFiles;
 using YoutubeExplode.Videos;
 
 namespace YTMusicDownloader.WebApi.Services
