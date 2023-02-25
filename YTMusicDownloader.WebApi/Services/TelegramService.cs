@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -20,7 +20,9 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly IBotService _botService;
         private readonly YoutubeClient _youtubeClient;
 
-        public TelegramService(IUpdateService updateService, IBotService botService)
+        public TelegramService(IUpdateService updateService, 
+            IBotService botService
+            )
         {
             _updateService = updateService;
             _botService = botService;
@@ -52,6 +54,8 @@ namespace YTMusicDownloader.WebApi.Services
                         Title = result.Title,
                         Author = result.Author?.ToString(),
                         YouTubeMusicPlaylistUrl = result.Url,
+                        Year = int.TryParse(result.Year, out int intYear) ? intYear : null,
+                        RecordType = result.EntryType
 
                     }).ToList(),
                 Token = _youtubeClient.Search.Token != null ? _youtubeClient.Search.Token.Value<string>() : null,
@@ -111,7 +115,7 @@ namespace YTMusicDownloader.WebApi.Services
                 if (!string.IsNullOrWhiteSpace(thumbnail))
                 {
                     await _botService.Client.SendPhotoAsync(request.UserId,
-                        inputOnlineFile);
+                        inputOnlineFile, caption: $"{result.Author} - {result.Title}");
                 }
 
                 foreach (PlaylistVideo playlistVideo in videos)
@@ -127,6 +131,20 @@ namespace YTMusicDownloader.WebApi.Services
 
             InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
+        }
+
+        public async Task<ResultObject<List<YTMusicSearchResult>>> GetReleases(CancellationToken cancellationToken)
+        {
+            List<YTMusicSearchResult> releases = (await _youtubeClient.Playlists.GetReleases(cancellationToken))
+                .Select(release => new YTMusicSearchResult
+                {
+                    ImageUrl = release.Thumbnails.LastOrDefault()?.Url,
+                    Title = release.Title,
+                    Author = release.Author?.ToString(),
+                    YouTubeMusicPlaylistUrl = release.Url,
+                    RecordType = release.EntryType
+                }).ToList();
+            return new ResultObject<List<YTMusicSearchResult>>(releases);
         }
     }
 }

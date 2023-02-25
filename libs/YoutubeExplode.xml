@@ -247,10 +247,11 @@
         <member name="P:YoutubeExplode.Common.Author.Title">
             <inheritdoc cref="P:YoutubeExplode.Common.Author.ChannelTitle" />
         </member>
-        <member name="M:YoutubeExplode.Common.Author.#ctor(YoutubeExplode.Channels.ChannelId,System.String)">
-            <summary>
-            Initializes an instance of <see cref="T:YoutubeExplode.Common.Author"/>.
-            </summary>
+        <member name="M:YoutubeExplode.Common.Author.#ctor">
+             <summary>
+             Initializes an instance of <see cref="T:YoutubeExplode.Common.Author"/>.
+             </summary>
+            
         </member>
         <member name="M:YoutubeExplode.Common.Author.ToString">
             <inheritdoc />
@@ -527,6 +528,11 @@
             Gets the metadata associated with the specified playlist.
             </summary>
         </member>
+        <member name="M:YoutubeExplode.Playlists.PlaylistClient.GetReleases(System.Threading.CancellationToken)">
+            <summary>
+            Gets the metadata associated with the specified playlist.
+            </summary>
+        </member>
         <member name="M:YoutubeExplode.Playlists.PlaylistClient.GetVideoBatchesAsync(YoutubeExplode.Playlists.PlaylistId,System.Threading.CancellationToken)">
             <summary>
             Enumerates batches of videos included in the specified playlist.
@@ -702,7 +708,7 @@
         <member name="P:YoutubeExplode.Search.PlaylistSearchResult.Thumbnails">
             <inheritdoc />
         </member>
-        <member name="M:YoutubeExplode.Search.PlaylistSearchResult.#ctor(YoutubeExplode.Playlists.PlaylistId,System.String,YoutubeExplode.Common.Author,System.Collections.Generic.IReadOnlyList{YoutubeExplode.Common.Thumbnail})">
+        <member name="M:YoutubeExplode.Search.PlaylistSearchResult.#ctor(YoutubeExplode.Playlists.PlaylistId,System.String,YoutubeExplode.Common.Author,System.Collections.Generic.IReadOnlyList{YoutubeExplode.Common.Thumbnail},System.String,System.String)">
             <summary>
             Initializes an instance of <see cref="T:YoutubeExplode.Search.PlaylistSearchResult"/>.
             </summary>
@@ -720,32 +726,32 @@
             Initializes an instance of <see cref="T:YoutubeExplode.Search.SearchClient"/>.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetResultBatchesAsync(System.String,YoutubeExplode.Search.SearchFilter,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetResultBatchesAsync(System.String,YoutubeExplode.Search.SearchFilter,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates batches of search results returned by the specified query.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetResultBatchesAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetResultBatchesAsync(System.String,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates batches of search results returned by the specified query.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetResultsAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetResultsAsync(System.String,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates search results returned by the specified query.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetVideosAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetVideosAsync(System.String,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates video search results returned by the specified query.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetPlaylistsAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetPlaylistsAsync(System.String,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates playlist search results returned by the specified query.
             </summary>
         </member>
-        <member name="M:YoutubeExplode.Search.SearchClient.GetChannelsAsync(System.String,System.Threading.CancellationToken)">
+        <member name="M:YoutubeExplode.Search.SearchClient.GetChannelsAsync(System.String,System.Nullable{System.Boolean},YoutubeExplode.Bridge.ContinuationData,System.Threading.CancellationToken)">
             <summary>
             Enumerates channel search results returned by the specified query.
             </summary>

@@ -7,7 +7,6 @@ namespace YTMusicDownloader.WebApi.Services
 {
     public interface ITelegramService
     {
-              
         Task<PagingResult> Search(string query, bool continuation,
             string continuationToken,
             string token, CancellationToken cancellationToken = default);
@@ -16,6 +15,9 @@ namespace YTMusicDownloader.WebApi.Services
             string token,
             CancellationToken cancellationToken = default);
         Task SendAlbumAsync(DownloadRequest request);
+
         Task SendTrackAsync(DownloadRequest request);
+
+        Task<ResultObject<List<YTMusicSearchResult>>> GetReleases(CancellationToken cancellationToken);
     }
 }

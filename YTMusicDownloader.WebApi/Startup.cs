@@ -1,10 +1,12 @@
 using System.Text.Json.Serialization;
+using AlbumSaver.MetricCollector;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using MongoDB.Driver;
 using YTMusicDownloader.WebApi.Services;
 
 namespace YTMusicDownloader.WebApi
@@ -25,6 +27,23 @@ namespace YTMusicDownloader.WebApi
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITelegramService, TelegramService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
+            services.Configure<MetricCollectionConfiguration>(Configuration.GetSection("MetricCollectionConfiguration"));
+
+            //try
+            //{
+            //    services.AddScoped(provider =>
+            //    {
+            //        string connectionString = Configuration["Database:ConnectionString"];
+            //        MongoClient client = new MongoClient(connectionString);
+            //        return client.GetDatabase(Configuration["Database:DatabaseName"]);
+            //    });
+
+            //    services.AddScoped<DownloadMetricService>();
+            //}
+            //catch
+            //{
+            //    //
+            //}
 
             services.AddControllers()
                 .AddNewtonsoftJson();
