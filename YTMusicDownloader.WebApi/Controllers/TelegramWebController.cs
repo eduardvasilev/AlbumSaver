@@ -34,6 +34,12 @@ namespace YTMusicDownloader.WebApi.Controllers
             return Ok(await _telegramService.SearchTracks(query, continuation, continuationToken, token, cancellationToken));
         }
 
+        [HttpGet("/album-tracks")]
+        public async Task<IActionResult> TracksByAlbum(string albumUrl, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.GetTracksByAlbumAsync(albumUrl, cancellationToken));
+        }
+
         [HttpGet("/releases")]
         public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
         {

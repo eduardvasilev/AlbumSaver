@@ -88,14 +88,28 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
                         Title = result.Title,
-                        Author = result.Author?.ToString(),
+                        Author = result.Author.ToString(),
                         YouTubeMusicPlaylistUrl = result.Url,
                     }).ToList(),
-                Token = _youtubeClient.Search.Token != null ? _youtubeClient.Search.Token.Value<string>() : null,
+                Token = _youtubeClient.Search.Token?.Value<string>(),
                 ContinuationToken = _youtubeClient.Search.ContinuationToken != null
                     ? _youtubeClient.Search.ContinuationToken.Value<string>()
                     : null,
             };
+        }
+
+        public async Task<ResultObject<IEnumerable<YTMusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken)
+        {
+            var videos =
+                await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(albumUrl));
+
+            return new ResultObject<IEnumerable<YTMusicSearchResult>>(videos.Select(x => new YTMusicSearchResult
+            {
+                Author = x.Author.ToString(),
+                ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
+                Title = x.Title,
+                YouTubeMusicPlaylistUrl = x.Url,
+            }));
         }
 
         public async Task SendAlbumAsync(DownloadRequest request)
