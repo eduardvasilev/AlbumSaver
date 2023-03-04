@@ -7,6 +7,7 @@ using YTMusicDownloader.WebApi.Services;
 namespace YTMusicDownloader.WebApi.Controllers
 {
     [Route("api/[controller]")]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public class UpdateController : Controller
     {
         private readonly IUpdateService _updateService;
@@ -18,6 +19,7 @@ namespace YTMusicDownloader.WebApi.Controllers
 
         // POST api/update
         [HttpPost]
+
         public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
         {
             //call and forget
