@@ -2,7 +2,7 @@
 
 namespace YTMusicDownloader.WebApi.Model
 {
-    public class YTMusicSearchResult
+    public class MusicSearchResult
     {
         public string YouTubeMusicPlaylistUrl { get; set; }
         public string Title { get; set; }

@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,6 +7,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using YoutubeExplode;
 using YoutubeExplode.Bridge;
+using YoutubeExplode.Channels;
 using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
@@ -29,7 +30,7 @@ namespace YTMusicDownloader.WebApi.Services
             _youtubeClient = new YoutubeClient();
         }
 
-        public async Task<PagingResult> Search(string query,
+        public async Task<PagingResult<MusicSearchResult>> Search(string query,
             bool continuation, 
             string continuationToken,
             string token,
@@ -45,10 +46,10 @@ namespace YTMusicDownloader.WebApi.Services
             var playlistSearchResults = await _youtubeClient.Search
                 .GetPlaylistsAsync(query, continuation, continuationData, cancellationToken);
 
-            return new PagingResult
+            return new PagingResult<MusicSearchResult>
             {
                 Result = playlistSearchResults
-                    .Select(result => new YTMusicSearchResult
+                    .Select(result => new MusicSearchResult
                     {
                         ImageUrl = result.Thumbnails.Last().Url,
                         Title = result.Title,
@@ -65,7 +66,7 @@ namespace YTMusicDownloader.WebApi.Services
             };
         }
 
-        public async Task<PagingResult> SearchTracks(string query,
+        public async Task<PagingResult<MusicSearchResult>> SearchTracks(string query,
             bool continuation,
             string continuationToken,
             string token,
@@ -81,10 +82,10 @@ namespace YTMusicDownloader.WebApi.Services
             var videoSearchResults = (await _youtubeClient.Search
                 .GetVideosAsync(query, continuation, continuationData, cancellationToken));
 
-            return new PagingResult
+            return new PagingResult<MusicSearchResult>
             {
                 Result = videoSearchResults
-                    .Select(result => new YTMusicSearchResult
+                    .Select(result => new MusicSearchResult
                     {
                         ImageUrl = result.Thumbnails.LastOrDefault()?.Url,
                         Title = result.Title,
@@ -98,18 +99,63 @@ namespace YTMusicDownloader.WebApi.Services
             };
         }
 
-        public async Task<ResultObject<IEnumerable<YTMusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken)
+        public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken)
         {
             var videos =
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(albumUrl));
 
-            return new ResultObject<IEnumerable<YTMusicSearchResult>>(videos.Select(x => new YTMusicSearchResult
+            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
             }));
+        }
+
+        public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByArtistAsync(string channelUrl, CancellationToken cancellationToken)
+        {
+            var videos =
+                await _youtubeClient.Playlists.GetByArtistAsync(ChannelId.Parse(channelUrl), cancellationToken);
+
+            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
+            {
+                Author = x.Author.ToString(),
+                ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
+                Title = x.Title,
+                YouTubeMusicPlaylistUrl = x.Url,
+            }));
+        }
+
+
+        public async Task<PagingResult<ArtistSearchResult>> GetArtists(string query,
+            bool continuation,
+            string continuationToken,
+            string token,
+            CancellationToken cancellationToken)
+        {
+            ContinuationData continuationData = continuation ? new ContinuationData
+            {
+                ContinuationToken = new JValue(continuationToken),
+                Token = new JValue(token)
+            } : null;
+
+            var channelSearchResults = (await _youtubeClient.Search
+                .GetChannelsAsync(query, continuation, continuationData, cancellationToken))
+                .Select(artist => new ArtistSearchResult
+                {
+                    Title = artist.Title,
+                    ImageUrl = artist.Thumbnails.LastOrDefault()?.Url,
+                    YouTubeMusicUrl = artist.Url,
+                });
+
+            return new PagingResult<ArtistSearchResult>
+            {
+                Result = channelSearchResults,
+                Token = _youtubeClient.Search.Token?.Value<string>(),
+                ContinuationToken = _youtubeClient.Search.ContinuationToken?.Value<string>(),
+            };
+
         }
 
         public async Task SendAlbumAsync(DownloadRequest request)
@@ -147,10 +193,10 @@ namespace YTMusicDownloader.WebApi.Services
             await _updateService.SendSongAsync(request.UserId, result, thumb);
         }
 
-        public async Task<ResultObject<List<YTMusicSearchResult>>> GetReleases(CancellationToken cancellationToken)
+        public async Task<ResultObject<List<MusicSearchResult>>> GetReleases(CancellationToken cancellationToken)
         {
-            List<YTMusicSearchResult> releases = (await _youtubeClient.Playlists.GetReleases(cancellationToken))
-                .Select(release => new YTMusicSearchResult
+            List<MusicSearchResult> releases = (await _youtubeClient.Playlists.GetReleases(cancellationToken))
+                .Select(release => new MusicSearchResult
                 {
                     ImageUrl = release.Thumbnails.LastOrDefault()?.Url,
                     Title = release.Title,
@@ -158,7 +204,7 @@ namespace YTMusicDownloader.WebApi.Services
                     YouTubeMusicPlaylistUrl = release.Url,
                     RecordType = release.EntryType
                 }).ToList();
-            return new ResultObject<List<YTMusicSearchResult>>(releases);
+            return new ResultObject<List<MusicSearchResult>>(releases);
         }
     }
 }

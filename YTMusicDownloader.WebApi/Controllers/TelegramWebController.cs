@@ -1,6 +1,8 @@
-﻿using System.Threading;
+﻿using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
+using Telegram.Bot;
+using Telegram.Bot.Types;
 using YTMusicDownloader.WebApi.Model;
 using YTMusicDownloader.WebApi.Services;
 
@@ -11,9 +13,12 @@ namespace YTMusicDownloader.WebApi.Controllers
     public class TelegramWebController : ControllerBase 
     { 
         private readonly ITelegramService _telegramService;
-        public TelegramWebController(ITelegramService telegramService)
+        private readonly IBotService _botService;
+
+        public TelegramWebController(ITelegramService telegramService, IBotService botService)
         {
             _telegramService = telegramService;
+            _botService = botService;
         }
 
         [HttpGet("/search")]
@@ -40,6 +45,12 @@ namespace YTMusicDownloader.WebApi.Controllers
             return Ok(await _telegramService.GetTracksByAlbumAsync(albumUrl, cancellationToken));
         }
 
+        [HttpGet("/artist-tracks")]
+        public async Task<IActionResult> TracksByArtist(string channelUrl, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.GetTracksByArtistAsync(channelUrl, cancellationToken));
+        }
+
         [HttpGet("/releases")]
         public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
         {
@@ -49,31 +60,48 @@ namespace YTMusicDownloader.WebApi.Controllers
         [HttpPost("/download")]
         public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, EntityType entityType = EntityType.Album)
         {
-
-            if (entityType == EntityType.Album)
+            try
             {
-                //TODO remove this workaround. Model should be passed in body
-                var model = new DownloadRequest
+                if (entityType == EntityType.Album)
                 {
-                    UserId = userId,
-                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                };
-                _telegramService.SendAlbumAsync(model);
-                return Ok();
+                    //TODO remove this workaround. Model should be passed in body
+                    var model = new DownloadRequest
+                    {
+                        UserId = userId,
+                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                    };
+                    _telegramService.SendAlbumAsync(model);
+                    return Ok();
+                }
+                else if (entityType == EntityType.Track)
+                {
+                    //TODO remove this workaround. Model should be passed in body
+                    var model = new DownloadRequest
+                    {
+                        UserId = userId,
+                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                    };
+                    _telegramService.SendTrackAsync(model);
+                    return Ok();
+                }
             }
-            else if (entityType == EntityType.Track)
+            catch
             {
-                //TODO remove this workaround. Model should be passed in body
-                var model = new DownloadRequest
-                {
-                    UserId = userId,
-                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                };
-                _telegramService.SendTrackAsync(model);
-                return Ok();
+                await _botService.Client.SendTextMessageAsync(new ChatId(userId),
+                    "Something went wrong during sending. Please try again");
+
+                return BadRequest();
             }
 
             return BadRequest();
+        }
+
+        [HttpGet("/artists")]
+        public async Task<IActionResult> GetArtists(string query, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.GetArtists(query, continuation, continuationToken, token, cancellationToken));
         }
     }
 }

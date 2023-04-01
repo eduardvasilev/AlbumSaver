@@ -16,10 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AlbumSaver.MetricCollector\AlbumSaver.MetricCollector.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Reference Include="YoutubeExplode">
       <HintPath>..\libs\YoutubeExplode.dll</HintPath>
     </Reference>
