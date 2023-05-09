@@ -54,7 +54,7 @@ namespace YTMusicDownloader.WebApi.Controllers
         [HttpGet("/releases")]
         public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetReleases(cancellationToken));
+            return Ok(await _telegramService.GetReleases());
         }
 
         [HttpPost("/download")]
@@ -88,12 +88,30 @@ namespace YTMusicDownloader.WebApi.Controllers
             catch
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
-                    "Something went wrong during sending. Please try again");
+                    "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
                 return BadRequest();
             }
 
             return BadRequest();
+        }
+
+        [HttpPost("/download-set")]
+        public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
+        {
+            try
+            {
+                _telegramService.SendTracksSetAsync(request);
+
+                return Ok();
+            }
+            catch
+            {
+                await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
+                    "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
+
+                return BadRequest();
+            }
         }
 
         [HttpGet("/artists")]

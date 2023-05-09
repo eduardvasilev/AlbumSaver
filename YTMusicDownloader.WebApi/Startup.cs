@@ -58,7 +58,7 @@ namespace YTMusicDownloader.WebApi
 
             app.UseSwaggerUI(c =>
             {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Learning Plan Web API");
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "AlbumSaver API");
             });
 
             app.UseEndpoints(endpoints =>

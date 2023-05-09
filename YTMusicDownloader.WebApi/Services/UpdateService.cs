@@ -21,6 +21,7 @@ using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YTMusicDownloader.WebApi.Model;
 using Author = YoutubeExplode.Common.Author;
+using YoutubeExplode.Exceptions;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -69,11 +70,25 @@ namespace YTMusicDownloader.WebApi.Services
                     await _botService.Client.SendTextMessageAsync(chatId, "Please, type a song name", replyMarkup:
                         new ForceReplyMarkup(), cancellationToken: cancellationToken);
                     return;
+                } 
+                
+                if (inputText.StartsWith("/feedback"))
+                {
+
+                    await _botService.Client.SendTextMessageAsync(chatId, "Please describe your idea or issue.", replyMarkup:
+                        new ForceReplyMarkup(), cancellationToken: cancellationToken);
+                    return;
                 }
 
                 if (message?.ReplyToMessage != null && message.ReplyToMessage.Text == "Please, type a song name")
                 {
                     await SendSongAsync(chatId, inputText, cancellationToken);
+                    return;
+                }   
+                
+                if (message?.ReplyToMessage != null && message.ReplyToMessage.Text == "Please describe your idea or issue." && message.Text != null)
+                {
+                    await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{message.Chat.Username}: \n\r{message.Text}", cancellationToken: cancellationToken);
                     return;
                 }
 
@@ -262,11 +277,46 @@ namespace YTMusicDownloader.WebApi.Services
         public async Task SendSongAsync(long chatId, IVideo video, InputMedia thump,
             CancellationToken cancellationToken)
         {
+            try
+            {
+                await SendSongInternalAsync(chatId, video, thump);
+            }
+            catch (VideoUnavailableException exception)
+            {
+                await Task.Delay(3000);
+
+                try
+                {
+                    await SendSongInternalAsync(chatId, video, thump);
+                }
+                catch (VideoUnavailableException secondException)
+                {
+                    await Task.Delay(5000);
+
+                    try
+                    {
+                        await SendSongInternalAsync(chatId, video, thump);
+                    }
+                    catch
+                    {
+                        await _botService.Client.SendTextMessageAsync(chatId,
+                            $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+        }
+
+        private async Task SendSongInternalAsync(long chatId, IVideo video, InputMedia thump)
+        {
             var videoId = VideoId.Parse(video.Id);
 
-            Stream stream = await GetAudioStreamAsync(videoId, cancellationToken);
-
-            await SendAudioAsync(chatId, stream, video.Title, video.Duration, thump, video.Author, cancellationToken);
+            await using Stream stream = await GetAudioStreamAsync(videoId, CancellationToken.None);
+            await SendAudioAsync(chatId, stream, video.Title, video.Duration, thump, video.Author,
+                CancellationToken.None);
         }
 
         private async Task SendActualAsync(long chatId, CancellationToken cancellationToken)

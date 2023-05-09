@@ -338,3 +338,8 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+/YTMusicDownloader.WebApi/appsettings.Development.json
+/YTMusicDownloader.WebApi/appsettings.json
+/YTMusicDownloader.WebApi/Properties/ServiceDependencies/YTMusicDownloaderWebApi - Web Deploy/profile.arm.json
+/YTMusicDownloader.WebApi/Properties/ServiceDependencies/YTMusicDownloaderWebApi - Web Deploy1/profile.arm.json
+/YTMusicDownloader.WebApi/Properties/ServiceDependencies/YTMusicDownloaderWebApi - Web Deploy2/profile.arm.json

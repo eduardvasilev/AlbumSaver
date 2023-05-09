@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using System;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -187,15 +188,28 @@ namespace YTMusicDownloader.WebApi.Services
 
         public async Task SendTrackAsync(DownloadRequest request)
         {
-            var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
+                var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
+
 
             InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
         }
 
-        public async Task<ResultObject<List<MusicSearchResult>>> GetReleases(CancellationToken cancellationToken)
+        public async Task SendTracksSetAsync(DownloadSetRequest request)
         {
-            List<MusicSearchResult> releases = (await _youtubeClient.Playlists.GetReleases(cancellationToken))
+            foreach (var requestUrl in request.Urls)
+            {
+                var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(requestUrl));
+
+                InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+
+                await _updateService.SendSongAsync(request.UserId, result, thumb);
+            }
+        }
+
+        public async Task<ResultObject<List<MusicSearchResult>>> GetReleases()
+        {
+            List<MusicSearchResult> releases = (await _youtubeClient.Playlists.GetReleases())
                 .Select(release => new MusicSearchResult
                 {
                     ImageUrl = release.Thumbnails.LastOrDefault()?.Url,
