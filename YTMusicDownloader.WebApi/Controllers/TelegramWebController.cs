@@ -121,5 +121,14 @@ namespace YTMusicDownloader.WebApi.Controllers
         {
             return Ok(await _telegramService.GetArtists(query, continuation, continuationToken, token, cancellationToken));
         }
+
+
+        [HttpGet("/artists/albums")]
+        public async Task<IActionResult> GetArtistAlbums(string channelUrl, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.GetAlbumsByArtistAsync(channelUrl, cancellationToken));
+        }
     }
 }
