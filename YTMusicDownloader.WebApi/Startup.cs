@@ -26,7 +26,7 @@ namespace YTMusicDownloader.WebApi
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITelegramService, TelegramService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
-
+            services.AddHealthChecks();
             services.AddControllers()
                 .AddNewtonsoftJson();
 
@@ -65,6 +65,8 @@ namespace YTMusicDownloader.WebApi
             {
                 endpoints.MapControllers();
             });
+
+            app.UseHealthChecks("/health");
         }
     }
 }

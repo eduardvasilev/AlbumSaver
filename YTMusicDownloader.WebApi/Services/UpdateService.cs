@@ -281,33 +281,33 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 await SendSongInternalAsync(chatId, video, thump);
             }
-            catch (VideoUnavailableException exception)
-            {
-                await Task.Delay(3000);
+            //catch (VideoUnavailableException exception)
+            //{
+            //    await Task.Delay(3000);
 
-                try
-                {
-                    await SendSongInternalAsync(chatId, video, thump);
-                }
-                catch (VideoUnavailableException secondException)
-                {
-                    await Task.Delay(5000);
+            //    try
+            //    {
+            //        await SendSongInternalAsync(chatId, video, thump);
+            //    }
+            //    catch (VideoUnavailableException secondException)
+            //    {
+            //        await Task.Delay(5000);
 
-                    try
-                    {
-                        await SendSongInternalAsync(chatId, video, thump);
-                    }
-                    catch
-                    {
-                        await _botService.Client.SendTextMessageAsync(chatId,
-                            $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
-                    }
-                }
-            }
+            //        try
+            //        {
+            //            await SendSongInternalAsync(chatId, video, thump);
+            //        }
             catch
             {
-
+                await _botService.Client.SendTextMessageAsync(chatId,
+                    $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
             }
+            //    }
+            //}
+            //catch
+            //{
+
+            //}
         }
 
         private async Task SendSongInternalAsync(long chatId, IVideo video, InputMedia thump)
