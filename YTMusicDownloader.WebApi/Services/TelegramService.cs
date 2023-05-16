@@ -114,18 +114,24 @@ namespace YTMusicDownloader.WebApi.Services
             }));
         }
 
-        public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByArtistAsync(string channelUrl, CancellationToken cancellationToken)
+        public async Task<PagingResult<MusicSearchResult>> GetTracksByArtistAsync(string channelUrl, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
         {
             var videos =
-                await _youtubeClient.Playlists.GetByArtistAsync(ChannelId.Parse(channelUrl), cancellationToken);
+                await _youtubeClient.Playlists.GetByArtistAsync(ChannelId.Parse(channelUrl), _youtubeClient, continuation, continuationToken, token, cancellationToken);
 
-            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
+            return new PagingResult<MusicSearchResult>(videos.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
-            }));
+            }))
+            {
+                Token = _youtubeClient.Search.Token?.Value<string>(),
+                ContinuationToken = _youtubeClient.Search.ContinuationToken?.Value<string>(),
+            };
         }
 
         public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetAlbumsByArtistAsync(string channelUrl, CancellationToken cancellationToken)

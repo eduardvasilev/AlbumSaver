@@ -15,8 +15,10 @@ namespace YTMusicDownloader.WebApi.Services
             string token,
             CancellationToken cancellationToken = default);
         Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken);
-        Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByArtistAsync(string channelUrl,
-            CancellationToken cancellationToken);
+
+        Task<PagingResult<MusicSearchResult>> GetTracksByArtistAsync(string channelUrl, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken);
 
         Task<ResultObject<IEnumerable<MusicSearchResult>>> GetAlbumsByArtistAsync(string channelUrl,
             CancellationToken cancellationToken);
