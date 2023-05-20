@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -54,6 +55,7 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpGet("/releases")]
+        [ResponseCache(Duration = 43200)]
         public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
         {
             return Ok(await _telegramService.GetReleases());

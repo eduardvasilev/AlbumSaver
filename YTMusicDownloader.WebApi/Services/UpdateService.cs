@@ -11,7 +11,6 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -157,7 +156,7 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         if (!string.IsNullOrWhiteSpace(thumbnail))
                         {
-                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken);
+                            await _botService.Client.SendPhotoAsync(chatId, new InputFileUrl(thumbnail), cancellationToken: cancellationToken);
                         }
 
                         foreach (PlaylistVideo playlistVideo in videos)
@@ -274,7 +273,7 @@ namespace YTMusicDownloader.WebApi.Services
             }
         }
 
-        public async Task SendSongAsync(long chatId, IVideo video, InputMedia thump,
+        public async Task SendSongAsync(long chatId, IVideo video, InputFileUrl thump,
             CancellationToken cancellationToken)
         {
             try
@@ -310,7 +309,7 @@ namespace YTMusicDownloader.WebApi.Services
             //}
         }
 
-        private async Task SendSongInternalAsync(long chatId, IVideo video, InputMedia thump)
+        private async Task SendSongInternalAsync(long chatId, IVideo video, InputFileUrl thump)
         {
             var videoId = VideoId.Parse(video.Id);
 
@@ -343,14 +342,14 @@ namespace YTMusicDownloader.WebApi.Services
         }
 
         private async Task SendAudioAsync(long chatId, Stream stream, string title, TimeSpan? videoDuration,
-            InputMedia thump,
+            InputFileUrl thump,
             Author videoAuthor,
             CancellationToken cancellationToken)
         {
-            await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), 
+            await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, title), 
                 cancellationToken: cancellationToken,
                 duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null),
-                parseMode: ParseMode.Html, thumb:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
+                parseMode: ParseMode.Html, thumbnail:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
             
         }
 

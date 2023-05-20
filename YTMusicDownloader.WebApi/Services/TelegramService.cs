@@ -142,7 +142,7 @@ namespace YTMusicDownloader.WebApi.Services
             return new ResultObject<IEnumerable<MusicSearchResult>>(albums.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
-                ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
+                ImageUrl = x.Thumbnails.FirstOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
             }));
@@ -188,8 +188,8 @@ namespace YTMusicDownloader.WebApi.Services
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl));
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
-            InputMedia inputOnlineFile = new InputMedia(thumbnail);
-            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+            InputFileUrl inputOnlineFile = new InputFileUrl(thumbnail);
+            InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
             if (videos.Any())
             {
@@ -211,7 +211,7 @@ namespace YTMusicDownloader.WebApi.Services
                 var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
 
 
-            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+                InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
         }
 
@@ -221,7 +221,7 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(requestUrl));
 
-                InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+                InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
                 await _updateService.SendSongAsync(request.UserId, result, thumb);
             }

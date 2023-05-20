@@ -9,7 +9,7 @@ namespace YTMusicDownloader.WebApi.Services
     {
         Task ProcessAsync(Update update, CancellationToken cancellationToken);
 
-        Task SendSongAsync(long chatId, IVideo video, InputMedia thump,
+        Task SendSongAsync(long chatId, IVideo video, InputFileUrl thump,
             CancellationToken cancellationToken = default);
     }
 }
