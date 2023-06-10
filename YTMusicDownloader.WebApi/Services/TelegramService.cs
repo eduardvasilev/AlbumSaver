@@ -148,6 +148,11 @@ namespace YTMusicDownloader.WebApi.Services
             }));
         }
 
+        public async Task<string> GetArtistImageAsync(string channelUrl, CancellationToken cancellationToken)
+        {
+            return await  _youtubeClient.Channels.GetArtistImage(channelUrl, cancellationToken);
+        }
+
 
         public async Task<PagingResult<ArtistSearchResult>> GetArtists(string query,
             bool continuation,

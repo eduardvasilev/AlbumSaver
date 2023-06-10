@@ -353,7 +353,7 @@ namespace YTMusicDownloader.WebApi.Services
             
         }
 
-        private async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
+        public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
         {
             StreamManifest streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
 
