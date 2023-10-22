@@ -23,7 +23,7 @@ namespace YTMusicDownloader.WebApi.Services
         Task<ResultObject<IEnumerable<MusicSearchResult>>> GetAlbumsByArtistAsync(string channelUrl,
             CancellationToken cancellationToken);
         
-        Task<string> GetArtistImageAsync(string channelUrl,
+        Task<UrlModel> GetArtistImageAsync(string channelUrl,
             CancellationToken cancellationToken);
         Task<PagingResult<ArtistSearchResult>> GetArtists(string query,
             bool continuation,

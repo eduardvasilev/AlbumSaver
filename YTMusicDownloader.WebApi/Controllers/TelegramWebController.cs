@@ -74,45 +74,46 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpPost("/download")]
-        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, EntityType entityType = EntityType.Album)
+        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId,
+            EntityType entityType = EntityType.Album)
         {
-            switch (entityType)
+            try
             {
-                //try
-                //{
-                case EntityType.Album:
+                switch (entityType)
                 {
-                    //TODO remove this workaround. Model should be passed in body
-                    var model = new DownloadRequest
+                    case EntityType.Album:
                     {
-                        UserId = userId,
-                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                    };
-                    _telegramService.SendAlbumAsync(model);
-                    break;
-                }
-                case EntityType.Track:
-                {
-                    //TODO remove this workaround. Model should be passed in body
-                    var model = new DownloadRequest
+                        //TODO remove this workaround. Model should be passed in body
+                        var model = new DownloadRequest
+                        {
+                            UserId = userId,
+                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                        };
+                        _telegramService.SendAlbumAsync(model);
+                        break;
+                    }
+                    case EntityType.Track:
                     {
-                        UserId = userId,
-                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                    };
-                    _telegramService.SendTrackAsync(model);
-                    break;
+                        //TODO remove this workaround. Model should be passed in body
+                        var model = new DownloadRequest
+                        {
+                            UserId = userId,
+                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                        };
+                        _telegramService.SendTrackAsync(model);
+                        break;
+                    }
                 }
-            }
+
                 return Ok();
+            }
+            catch
+            {
+                await _botService.Client.SendTextMessageAsync(new ChatId(userId),
+                    "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
-            //}
-            //catch
-            //{
-            //    await _botService.Client.SendTextMessageAsync(new ChatId(userId),
-            //        "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
-
-            //    return Ok();
-            //}
+                return Ok();
+            }
 
             return Ok();
         }

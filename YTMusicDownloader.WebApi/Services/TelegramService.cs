@@ -102,16 +102,25 @@ namespace YTMusicDownloader.WebApi.Services
 
         public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken)
         {
+            Playlist album = await _youtubeClient.Playlists.GetAsync(albumUrl, cancellationToken);
+
             var videos =
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(albumUrl));
 
-            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
+            var result = new AlbumTracksResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
             }));
+
+
+            result.AlbumImage = album.Thumbnails.LastOrDefault()?.Url;
+            result.AlbumTitle = album.Title;
+            result.ChannelUrl = album.Author?.ChannelId;
+            result.ArtistName = album.Author?.Title;
+            return result;
         }
 
         public async Task<PagingResult<MusicSearchResult>> GetTracksByArtistAsync(string channelUrl, bool continuation,
@@ -148,9 +157,9 @@ namespace YTMusicDownloader.WebApi.Services
             }));
         }
 
-        public async Task<string> GetArtistImageAsync(string channelUrl, CancellationToken cancellationToken)
+        public async Task<UrlModel> GetArtistImageAsync(string channelUrl, CancellationToken cancellationToken)
         {
-            return await  _youtubeClient.Channels.GetArtistImage(channelUrl, cancellationToken);
+            return new UrlModel(await  _youtubeClient.Channels.GetArtistImage(channelUrl, cancellationToken));
         }
 
 
