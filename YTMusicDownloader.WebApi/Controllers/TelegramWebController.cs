@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -40,78 +42,98 @@ namespace YTMusicDownloader.WebApi.Controllers
         }
 
         [HttpGet("/album-tracks")]
+        [HttpGet("/album/tracks")]
         public async Task<IActionResult> TracksByAlbum(string albumUrl, CancellationToken cancellationToken)
         {
             return Ok(await _telegramService.GetTracksByAlbumAsync(albumUrl, cancellationToken));
         }
 
+        [HttpGet("/artist/tracks")]
         [HttpGet("/artist-tracks")]
-        public async Task<IActionResult> TracksByArtist(string channelUrl, CancellationToken cancellationToken)
+        [ResponseCache(Duration = 43200)]
+        public async Task<IActionResult> TracksByArtist(string channelUrl, bool continuation,
+            string continuationToken,
+            string token, int? takeCount, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetTracksByArtistAsync(channelUrl, cancellationToken));
+            var tracksByArtistAsync = await _telegramService.GetTracksByArtistAsync(channelUrl, continuation, continuationToken, token, cancellationToken);
+
+            if (takeCount.HasValue)
+            {
+                //be careful with pagination. Tracks could be skipped
+                tracksByArtistAsync.Result = tracksByArtistAsync.Result.Take(takeCount.Value);
+            }
+
+            return Ok(tracksByArtistAsync);
         }
 
         [HttpGet("/releases")]
+        [ResponseCache(Duration = 43200)]
         public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
         {
             return Ok(await _telegramService.GetReleases());
         }
 
         [HttpPost("/download")]
-        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, EntityType entityType = EntityType.Album)
+        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId,
+            EntityType entityType = EntityType.Album)
         {
             try
             {
-                if (entityType == EntityType.Album)
+                switch (entityType)
                 {
-                    //TODO remove this workaround. Model should be passed in body
-                    var model = new DownloadRequest
+                    case EntityType.Album:
                     {
-                        UserId = userId,
-                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                    };
-                    _telegramService.SendAlbumAsync(model);
-                    return Ok();
-                }
-                else if (entityType == EntityType.Track)
-                {
-                    //TODO remove this workaround. Model should be passed in body
-                    var model = new DownloadRequest
+                        //TODO remove this workaround. Model should be passed in body
+                        var model = new DownloadRequest
+                        {
+                            UserId = userId,
+                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                        };
+                        _telegramService.SendAlbumAsync(model);
+                        break;
+                    }
+                    case EntityType.Track:
                     {
-                        UserId = userId,
-                        YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                    };
-                    _telegramService.SendTrackAsync(model);
-                    return Ok();
+                        //TODO remove this workaround. Model should be passed in body
+                        var model = new DownloadRequest
+                        {
+                            UserId = userId,
+                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                        };
+                        _telegramService.SendTrackAsync(model);
+                        break;
+                    }
                 }
+
+                return Ok();
             }
             catch
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
                     "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
-                return BadRequest();
+                return Ok();
             }
 
-            return BadRequest();
+            return Ok();
         }
 
         [HttpPost("/download-set")]
         public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
         {
-            try
-            {
+            //try
+            //{
                 _telegramService.SendTracksSetAsync(request);
 
                 return Ok();
-            }
-            catch
-            {
-                await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
-                    "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
+            //}
+            //catch
+            //{
+            //    await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
+            //        "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
-                return BadRequest();
-            }
+            //    return Ok();
+            //}
         }
 
         [HttpGet("/artists")]
@@ -124,11 +146,20 @@ namespace YTMusicDownloader.WebApi.Controllers
 
 
         [HttpGet("/artists/albums")]
-        public async Task<IActionResult> GetArtistAlbums(string channelUrl, bool continuation,
-            string continuationToken,
-            string token, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetArtistAlbums(string channelUrl, int? takeCount, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetAlbumsByArtistAsync(channelUrl, cancellationToken));
+            var albumsByArtistAsync = await _telegramService.GetAlbumsByArtistAsync(channelUrl, cancellationToken);
+            if (takeCount.HasValue)
+            {
+                albumsByArtistAsync.Result = albumsByArtistAsync.Result.Take(takeCount.Value);
+            }
+            return Ok(albumsByArtistAsync);
+        }  
+        
+        [HttpGet("/artists/image")]
+        public async Task<IActionResult> GetArtistImage(string channelUrl, CancellationToken cancellationToken)
+        {
+            return Ok(await _telegramService.GetArtistImageAsync(channelUrl, cancellationToken));
         }
     }
 }

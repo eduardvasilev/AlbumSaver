@@ -102,30 +102,45 @@ namespace YTMusicDownloader.WebApi.Services
 
         public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByAlbumAsync(string albumUrl, CancellationToken cancellationToken)
         {
+            Playlist album = await _youtubeClient.Playlists.GetAsync(albumUrl, cancellationToken);
+
             var videos =
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(albumUrl));
 
-            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
+            var result = new AlbumTracksResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
             }));
+
+
+            result.AlbumImage = album.Thumbnails.LastOrDefault()?.Url;
+            result.AlbumTitle = album.Title;
+            result.ChannelUrl = album.Author?.ChannelId;
+            result.ArtistName = album.Author?.Title;
+            return result;
         }
 
-        public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetTracksByArtistAsync(string channelUrl, CancellationToken cancellationToken)
+        public async Task<PagingResult<MusicSearchResult>> GetTracksByArtistAsync(string channelUrl, bool continuation,
+            string continuationToken,
+            string token, CancellationToken cancellationToken)
         {
             var videos =
-                await _youtubeClient.Playlists.GetByArtistAsync(ChannelId.Parse(channelUrl), cancellationToken);
+                await _youtubeClient.Playlists.GetByArtistAsync(ChannelId.Parse(channelUrl), _youtubeClient, continuation, continuationToken, token, cancellationToken);
 
-            return new ResultObject<IEnumerable<MusicSearchResult>>(videos.Select(x => new MusicSearchResult
+            return new PagingResult<MusicSearchResult>(videos.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
-            }));
+            }))
+            {
+                Token = _youtubeClient.Search.Token?.Value<string>(),
+                ContinuationToken = _youtubeClient.Search.ContinuationToken?.Value<string>(),
+            };
         }
 
         public async Task<ResultObject<IEnumerable<MusicSearchResult>>> GetAlbumsByArtistAsync(string channelUrl, CancellationToken cancellationToken)
@@ -136,10 +151,15 @@ namespace YTMusicDownloader.WebApi.Services
             return new ResultObject<IEnumerable<MusicSearchResult>>(albums.Select(x => new MusicSearchResult
             {
                 Author = x.Author.ToString(),
-                ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
+                ImageUrl = x.Thumbnails.FirstOrDefault()?.Url,
                 Title = x.Title,
                 YouTubeMusicPlaylistUrl = x.Url,
             }));
+        }
+
+        public async Task<UrlModel> GetArtistImageAsync(string channelUrl, CancellationToken cancellationToken)
+        {
+            return new UrlModel(await  _youtubeClient.Channels.GetArtistImage(channelUrl, cancellationToken));
         }
 
 
@@ -182,8 +202,8 @@ namespace YTMusicDownloader.WebApi.Services
                 await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl));
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
-            InputMedia inputOnlineFile = new InputMedia(thumbnail);
-            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+            InputFileUrl inputOnlineFile = new InputFileUrl(thumbnail);
+            InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
             if (videos.Any())
             {
@@ -205,7 +225,7 @@ namespace YTMusicDownloader.WebApi.Services
                 var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
 
 
-            InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+                InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
         }
 
@@ -215,7 +235,7 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(requestUrl));
 
-                InputMedia thumb = new InputMedia(result.Thumbnails.FirstOrDefault()?.Url);
+                InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
                 await _updateService.SendSongAsync(request.UserId, result, thumb);
             }

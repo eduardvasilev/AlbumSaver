@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using Newtonsoft.Json;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading;
@@ -11,7 +13,6 @@ using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeExplode;
 using YoutubeExplode.Common;
@@ -34,8 +35,22 @@ namespace YTMusicDownloader.WebApi.Services
         public UpdateService(IBotService botService, IHttpClientFactory httpClientFactory)
         {
             _botService = botService;
-            _youtube = new YoutubeClient();
-            _httpClient = httpClientFactory.CreateClient();
+
+            var baseAddress = new Uri("https://music.youtube.com");
+            var cookieContainer = new CookieContainer();
+            cookieContainer.Add(baseAddress, new Cookie("CONSENT", "YES+"));
+            cookieContainer.Add(baseAddress, new Cookie("SOCS", "CAISNQgDEitib3FfaWRlbnRpdHlmcm9udGVuZHVpc2VydmVyXzIwMjMwODI5LjA3X3AxGgJlbiACGgYIgLC_pwY"));
+            var handler = new HttpClientHandler
+            {
+                CookieContainer = cookieContainer
+            };
+            ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
+            if (handler.SupportsAutomaticDecompression)
+                handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+            _httpClient = new HttpClient(handler, false);
+
+            _youtube = new YoutubeClient(_httpClient);
         }
 
         public async Task ProcessAsync(Update update, CancellationToken cancellationToken)
@@ -157,7 +172,7 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         if (!string.IsNullOrWhiteSpace(thumbnail))
                         {
-                            await _botService.Client.SendPhotoAsync(chatId, new InputOnlineFile(thumbnail), cancellationToken: cancellationToken);
+                            await _botService.Client.SendPhotoAsync(chatId, new InputFileUrl(thumbnail), cancellationToken: cancellationToken);
                         }
 
                         foreach (PlaylistVideo playlistVideo in videos)
@@ -274,43 +289,22 @@ namespace YTMusicDownloader.WebApi.Services
             }
         }
 
-        public async Task SendSongAsync(long chatId, IVideo video, InputMedia thump,
+        public async Task SendSongAsync(long chatId, IVideo video, InputFileUrl thump,
             CancellationToken cancellationToken)
         {
             try
             {
                 await SendSongInternalAsync(chatId, video, thump);
             }
-            //catch (VideoUnavailableException exception)
-            //{
-            //    await Task.Delay(3000);
-
-            //    try
-            //    {
-            //        await SendSongInternalAsync(chatId, video, thump);
-            //    }
-            //    catch (VideoUnavailableException secondException)
-            //    {
-            //        await Task.Delay(5000);
-
-            //        try
-            //        {
-            //            await SendSongInternalAsync(chatId, video, thump);
-            //        }
+         
             catch
             {
                 await _botService.Client.SendTextMessageAsync(chatId,
                     $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
             }
-            //    }
-            //}
-            //catch
-            //{
-
-            //}
         }
 
-        private async Task SendSongInternalAsync(long chatId, IVideo video, InputMedia thump)
+        private async Task SendSongInternalAsync(long chatId, IVideo video, InputFileUrl thump)
         {
             var videoId = VideoId.Parse(video.Id);
 
@@ -343,24 +337,25 @@ namespace YTMusicDownloader.WebApi.Services
         }
 
         private async Task SendAudioAsync(long chatId, Stream stream, string title, TimeSpan? videoDuration,
-            InputMedia thump,
+            InputFileUrl thump,
             Author videoAuthor,
             CancellationToken cancellationToken)
         {
-            await _botService.Client.SendAudioAsync(chatId, new InputMedia(stream, title), 
+            await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, title), 
                 cancellationToken: cancellationToken,
                 duration: (videoDuration.HasValue ? (int?) videoDuration.Value.TotalSeconds : null),
-                parseMode: ParseMode.Html, thumb:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
+                parseMode: ParseMode.Html, thumbnail:  thump, title: title, disableNotification: true, performer: videoAuthor.ChannelTitle);
             
         }
 
-        private async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
+        public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
         {
             StreamManifest streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
 
-            IStreamInfo streamInfo = streamManifest.GetAudioStreams().GetWithHighestBitrate();
+            IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-            return await _youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
+            var stream = await _youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
+            return stream;
         }
     }
 }
