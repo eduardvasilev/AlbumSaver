@@ -23,6 +23,8 @@ using YoutubeExplode.Videos.Streams;
 using YTMusicDownloader.WebApi.Model;
 using Author = YoutubeExplode.Common.Author;
 using YoutubeExplode.Exceptions;
+using YTMusicAPI;
+using YTMusicAPI.Model.Domain;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -45,9 +47,6 @@ namespace YTMusicDownloader.WebApi.Services
                 CookieContainer = cookieContainer
             };
             ServicePointManager.ServerCertificateValidationCallback += (sender, certificate, chain, sslPolicyErrors) => true;
-            if (handler.SupportsAutomaticDecompression)
-                handler.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-
             _httpClient = new HttpClient(handler, false);
 
             _youtube = new YoutubeClient(_httpClient);
@@ -308,9 +307,14 @@ namespace YTMusicDownloader.WebApi.Services
         {
             var videoId = VideoId.Parse(video.Id);
 
-            await using Stream stream = await GetAudioStreamAsync(videoId, CancellationToken.None);
-            await SendAudioAsync(chatId, stream, video.Title, video.Duration, thump, video.Author,
-                CancellationToken.None);
+            await using (Stream stream = await GetAudioStreamAsync(videoId, CancellationToken.None))
+            {
+                await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, video.Title), 
+                    cancellationToken: CancellationToken.None,
+                    duration: (video.Duration.HasValue ? (int?) video.Duration.Value.TotalSeconds : null),
+                    parseMode: ParseMode.Html, thumbnail:  thump, title: video.Title, disableNotification: true, performer: video.Author.ChannelTitle);
+            }
+     
         }
 
         private async Task SendActualAsync(long chatId, CancellationToken cancellationToken)
@@ -350,12 +354,31 @@ namespace YTMusicDownloader.WebApi.Services
 
         public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
         {
-            StreamManifest streamManifest = await _youtube.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
+            try
+            {
+                StreamManifest streamManifest =
+                    await _youtube.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
 
-            IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
+                IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
-            var stream = await _youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
-            return stream;
+                var stream = await _youtube.Videos.Streams.GetAsync(streamInfo, cancellationToken);
+                return stream;
+            }
+            catch
+            {
+                TrackClient trackClient = new TrackClient();
+                Track track = await trackClient.GetTrackInfoAsync(videoId.Value, cancellationToken);
+                string requestUri = track.GetStreamWithHighestBitrate()?.Url;
+                if (requestUri != null)
+                {
+                    var streamAsync = await _httpClient.GetStreamAsync(requestUri, cancellationToken);
+                    return streamAsync;
+                }
+                else
+                {
+                    throw;
+                }
+            }
         }
     }
 }

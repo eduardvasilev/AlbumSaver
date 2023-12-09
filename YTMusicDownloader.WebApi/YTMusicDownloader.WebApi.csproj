@@ -21,6 +21,9 @@
     <Reference Include="YoutubeExplode">
       <HintPath>..\libs\YoutubeExplode.dll</HintPath>
     </Reference>
+    <Reference Include="YTMusicAPI">
+      <HintPath>..\libs\YTMusicAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 	<ItemGroup>
