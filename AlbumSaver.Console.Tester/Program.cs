@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.ApplicationInsights;
+using Microsoft.Extensions.DependencyInjection;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
@@ -18,7 +19,7 @@ var botClient = new TelegramBotClient("");
 UpdateService updateService = new UpdateService(new BotService()
 {
     Client = botClient
-}, factory);
+}, factory, new TelemetryClient());
 
 var receiverOptions = new ReceiverOptions
 {

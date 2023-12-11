@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.ApplicationInsights;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using YTMusicDownloader.WebApi.Model;
@@ -16,11 +17,13 @@ namespace YTMusicDownloader.WebApi.Controllers
     { 
         private readonly ITelegramService _telegramService;
         private readonly IBotService _botService;
+        private readonly TelemetryClient _telemetryClient;
 
-        public TelegramWebController(ITelegramService telegramService, IBotService botService)
+        public TelegramWebController(ITelegramService telegramService, IBotService botService, TelemetryClient telemetryClient)
         {
             _telegramService = telegramService;
             _botService = botService;
+            _telemetryClient = telemetryClient;
         }
 
         [HttpGet("/search")]
@@ -107,7 +110,7 @@ namespace YTMusicDownloader.WebApi.Controllers
 
                 return Ok();
             }
-            catch
+            catch(Exception exception) 
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
                     "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");

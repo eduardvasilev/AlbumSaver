@@ -25,18 +25,21 @@ using Author = YoutubeExplode.Common.Author;
 using YoutubeExplode.Exceptions;
 using YTMusicAPI;
 using YTMusicAPI.Model.Domain;
+using Microsoft.ApplicationInsights;
 
 namespace YTMusicDownloader.WebApi.Services
 {
     public class UpdateService : IUpdateService
     {
         private readonly IBotService _botService;
+        private readonly TelemetryClient _telemetryClient;
         private readonly YoutubeClient _youtube;
         private readonly HttpClient _httpClient;
 
-        public UpdateService(IBotService botService, IHttpClientFactory httpClientFactory)
+        public UpdateService(IBotService botService, IHttpClientFactory httpClientFactory, TelemetryClient telemetryClient)
         {
             _botService = botService;
+            _telemetryClient = telemetryClient;
 
             var baseAddress = new Uri("https://music.youtube.com");
             var cookieContainer = new CookieContainer();
@@ -296,8 +299,10 @@ namespace YTMusicDownloader.WebApi.Services
                 await SendSongInternalAsync(chatId, video, thump);
             }
          
-            catch
+            catch(Exception exception)
             {
+                _telemetryClient.TrackException(exception);
+
                 await _botService.Client.SendTextMessageAsync(chatId,
                     $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
             }
