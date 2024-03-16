@@ -1,29 +1,39 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 using Asp.Versioning;
 using Microsoft.ApplicationInsights;
+using Microsoft.AspNetCore.Mvc;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using YTMusicAPI.Model;
+using YTMusicAPI.Model.Infrastructure;
 using YTMusicDownloader.WebApi.Model;
 using YTMusicDownloader.WebApi.Services;
+using EntityType = YTMusicDownloader.WebApi.Model.EntityType;
 
-namespace YTMusicDownloader.WebApi.Controllers
+namespace YTMusicDownloader.WebApi.Controllers.V2
 {
     [Route("api/[controller]")]
     [ApiController]
-    [ApiVersion(1)]
+    [ApiVersion(2)]
     public class TelegramWebController : ControllerBase 
     { 
         private readonly ITelegramService _telegramService;
+        private readonly ISearchService _searchService;
+        private readonly ITracksService _tracksService;
+        private readonly IArtistsService _artistsService;
         private readonly IBotService _botService;
         private readonly TelemetryClient _telemetryClient;
 
-        public TelegramWebController(ITelegramService telegramService, IBotService botService, TelemetryClient telemetryClient)
+        public TelegramWebController(ITelegramService telegramService, ISearchService searchService,
+            ITracksService tracksService, IArtistsService artistsService, IBotService botService, TelemetryClient telemetryClient)
         {
             _telegramService = telegramService;
+            _searchService = searchService;
+            _tracksService = tracksService;
+            _artistsService = artistsService;
             _botService = botService;
             _telemetryClient = telemetryClient;
         }
@@ -34,7 +44,12 @@ namespace YTMusicDownloader.WebApi.Controllers
             string continuationToken,
             string token, CancellationToken cancellationToken)
         {
-           return Ok(await _telegramService.Search(query, continuation, continuationToken, token, cancellationToken));
+           return Ok(await _searchService.SearchAlbumsAsync(new QueryRequest
+           {
+               Query = query,
+               ContinuationData = new ContinuationData(continuationToken, token),
+               ContinuationNeed = continuation
+           }, cancellationToken));
         }
 
 
@@ -43,16 +58,22 @@ namespace YTMusicDownloader.WebApi.Controllers
             string continuationToken,
             string token, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.SearchTracks(query, continuation, continuationToken, token, cancellationToken));
+            return Ok(await _searchService.SearchTracksAsync(new QueryRequest
+            {
+                Query = query,
+                ContinuationData = new ContinuationData(continuationToken, token),
+                ContinuationNeed = continuation
+            }, cancellationToken));
         }
 
         [HttpGet("/album-tracks")]
         [HttpGet("/album/tracks")]
         public async Task<IActionResult> TracksByAlbum(string albumUrl, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetTracksByAlbumAsync(albumUrl, cancellationToken));
+            return Ok(await _tracksService.GetAlbumTracksAsync(albumUrl, cancellationToken));
         }
 
+        //TODO migrate to lib
         [HttpGet("/artist/tracks")]
         [HttpGet("/artist-tracks")]
         [ResponseCache(Duration = 43200)]
@@ -73,9 +94,9 @@ namespace YTMusicDownloader.WebApi.Controllers
 
         [HttpGet("/releases")]
         [ResponseCache(Duration = 43200)]
-        public async Task<IActionResult> Releases(string query, CancellationToken cancellationToken)
+        public async Task<IActionResult> Releases(CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetReleases());
+            return Ok(await _searchService.GetReleasesAsync(cancellationToken));
         }
 
         [HttpPost("/download")]
@@ -112,33 +133,21 @@ namespace YTMusicDownloader.WebApi.Controllers
 
                 return Ok();
             }
-            catch(Exception exception) 
+            catch(Exception) 
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
                     "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
                 return Ok();
             }
-
-            return Ok();
         }
 
         [HttpPost("/download-set")]
         public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
         {
-            //try
-            //{
-                _telegramService.SendTracksSetAsync(request);
+            _telegramService.SendTracksSetAsync(request);
 
-                return Ok();
-            //}
-            //catch
-            //{
-            //    await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
-            //        "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
-
-            //    return Ok();
-            //}
+            return Ok();
         }
 
         [HttpGet("/artists")]
@@ -146,7 +155,12 @@ namespace YTMusicDownloader.WebApi.Controllers
             string continuationToken,
             string token, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetArtists(query, continuation, continuationToken, token, cancellationToken));
+            return Ok(await _searchService.SearchArtistsAsync(new QueryRequest
+            {
+                Query = query,
+                ContinuationData = new ContinuationData(continuationToken, token),
+                ContinuationNeed = continuation
+            }, cancellationToken));
         }
 
 
@@ -164,7 +178,7 @@ namespace YTMusicDownloader.WebApi.Controllers
         [HttpGet("/artists/image")]
         public async Task<IActionResult> GetArtistImage(string channelUrl, CancellationToken cancellationToken)
         {
-            return Ok(await _telegramService.GetArtistImageAsync(channelUrl, cancellationToken));
+            return Ok(await _artistsService.GetArtistImageAsync(channelUrl, cancellationToken));
         }
     }
 }
