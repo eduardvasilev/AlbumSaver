@@ -1,11 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.Caching.Memory;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Caching.Memory;
 using YTMusicAPI.Abstraction;
-using YTMusicAPI.Model;
 using YTMusicDownloader.WebApi.Model;
 
 namespace YTMusicDownloader.WebApi.Services;
@@ -24,9 +23,9 @@ public class TracksService : ITracksService
     {
         if (!_memoryCache.TryGetValue(albumUrl, out ResultObject<IEnumerable<MusicSearchResult>> cache))
         {
-            var searchResult = await _trackClient.GetAlbumTracks(albumUrl, cancellationToken);
+            var searchResult = await _trackClient.GetAlbumTracksAsync(albumUrl, cancellationToken);
 
-            var result = new ResultObject<IEnumerable<MusicSearchResult>>(searchResult.Select(x => new MusicSearchResult
+            var result = new ResultObject<IEnumerable<MusicSearchResult>>(searchResult.Tracks.Select(x => new MusicSearchResult
             {
                 Author = x.Author,
                 ImageUrl = x.Thumbnails.LastOrDefault()?.Url,

@@ -24,16 +24,18 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         private readonly ISearchService _searchService;
         private readonly ITracksService _tracksService;
         private readonly IArtistsService _artistsService;
+        private readonly IDownloadService _downloadService;
         private readonly IBotService _botService;
         private readonly TelemetryClient _telemetryClient;
 
         public TelegramWebController(ITelegramService telegramService, ISearchService searchService,
-            ITracksService tracksService, IArtistsService artistsService, IBotService botService, TelemetryClient telemetryClient)
+            ITracksService tracksService, IArtistsService artistsService, IDownloadService downloadService, IBotService botService, TelemetryClient telemetryClient)
         {
             _telegramService = telegramService;
             _searchService = searchService;
             _tracksService = tracksService;
             _artistsService = artistsService;
+            _downloadService = downloadService;
             _botService = botService;
             _telemetryClient = telemetryClient;
         }
@@ -100,7 +102,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         }
 
         [HttpPost("/download")]
-        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId,
+        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, CancellationToken cancellationToken,
             EntityType entityType = EntityType.Album)
         {
             try
@@ -115,7 +117,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
                             UserId = userId,
                             YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
                         };
-                        _telegramService.SendAlbumAsync(model);
+                        _downloadService.SendAlbumAsync(model, cancellationToken);
                         break;
                     }
                     case EntityType.Track:
@@ -126,7 +128,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
                             UserId = userId,
                             YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
                         };
-                        _telegramService.SendTrackAsync(model);
+                        _downloadService.SendTrackAsync(model, cancellationToken);
                         break;
                     }
                 }
@@ -143,9 +145,9 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         }
 
         [HttpPost("/download-set")]
-        public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
+        public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request, CancellationToken cancellationToken)
         {
-            _telegramService.SendTracksSetAsync(request);
+            _downloadService.SendTracksSetAsync(request, cancellationToken);
 
             return Ok();
         }

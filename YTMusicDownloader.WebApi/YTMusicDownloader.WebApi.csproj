@@ -17,7 +17,7 @@
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.5" />
-	<PackageReference Include="YTMusicAPI" Version="1.0.2" />
+	<PackageReference Include="YTMusicAPI" Version="1.0.4" />
   </ItemGroup>
 
   <ItemGroup>
