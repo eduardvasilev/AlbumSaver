@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.Payments;
 using YoutubeExplode;
 using YoutubeExplode.Bridge;
 using YoutubeExplode.Channels;
@@ -218,15 +219,18 @@ namespace YTMusicDownloader.WebApi.Services
                     await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
                 }
             }
+
+            await SendDonateMessage(request.UserId);
         }
 
         public async Task SendTrackAsync(DownloadRequest request)
         {
-                var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
+            var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(request.YouTubeMusicPlaylistUrl));
 
 
-                InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
+            InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
+            await SendDonateMessage(request.UserId);
         }
 
         public async Task SendTracksSetAsync(DownloadSetRequest request)
@@ -239,6 +243,16 @@ namespace YTMusicDownloader.WebApi.Services
 
                 await _updateService.SendSongAsync(request.UserId, result, thumb);
             }
+
+            await SendDonateMessage(request.UserId);
+        }
+
+        private async Task SendDonateMessage(long userId)
+        {
+            DownloadSetRequest request;
+            await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
+                "Support us so we can add new features",
+                Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
         }
 
         public async Task<ResultObject<List<MusicSearchResult>>> GetReleases()
