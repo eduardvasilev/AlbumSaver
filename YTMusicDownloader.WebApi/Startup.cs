@@ -6,7 +6,10 @@ using Microsoft.Extensions.Hosting;
 using System.IO;
 using System.Reflection;
 using System;
+using YTMusicAPI;
+using YTMusicAPI.Abstraction;
 using YTMusicDownloader.WebApi.Services;
+using Asp.Versioning;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -23,8 +26,16 @@ namespace YTMusicDownloader.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddScoped<IUpdateService, UpdateService>();
+            services.AddScoped<ISearchService, SearchService>();
+            services.AddScoped<ITracksService, TracksService>();
+            services.AddScoped<IReleasesClient, ReleasesClient>();
+            services.AddScoped<IArtistsService, ArtistsService>();
             services.AddSingleton<IBotService, BotService>();
             services.AddScoped<ITelegramService, TelegramService>();
+            services.AddScoped<ISearchClient, SearchClient>();
+            services.AddScoped<ITrackClient, TrackClient>();
+            services.AddScoped<IArtistClient, ArtistClient>();
+            services.AddScoped<IDownloadService, DownloadService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
             services.AddHealthChecks();
             services.AddControllers()
@@ -43,6 +54,20 @@ namespace YTMusicDownloader.WebApi
             services.AddApplicationInsightsTelemetry();
 
             services.AddMvc();
+
+            services.AddApiVersioning(options =>
+            {
+                options.DefaultApiVersion = new ApiVersion(1);
+                options.ReportApiVersions = true;
+                options.AssumeDefaultVersionWhenUnspecified = true;
+                options.ApiVersionReader = ApiVersionReader.Combine(
+                    new UrlSegmentApiVersionReader(),
+                    new HeaderApiVersionReader("X-Api-Version"));
+            }).AddApiExplorer(options =>
+            {
+                options.GroupNameFormat = "'v'V";
+                options.SubstituteApiVersionInUrl = true;
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
