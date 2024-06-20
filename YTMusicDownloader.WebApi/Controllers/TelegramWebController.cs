@@ -168,9 +168,9 @@ namespace YTMusicDownloader.WebApi.Controllers
             return Ok(await _telegramService.GetArtistImageAsync(channelUrl, cancellationToken));
         }
 
-        [HttpPost("/update")]
+        [HttpPost("/callback")]
 
-        public async Task<IActionResult> Post([FromBody] Update request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
             Update? update;
             try
