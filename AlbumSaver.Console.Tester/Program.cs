@@ -19,7 +19,7 @@ var botClient = new TelegramBotClient("");
 UpdateService updateService = new UpdateService(new BotService()
 {
     Client = botClient
-}, factory, new TelemetryClient());
+}, new BackupBackendService(factory, null), new TelemetryClient());
 
 var receiverOptions = new ReceiverOptions
 {
