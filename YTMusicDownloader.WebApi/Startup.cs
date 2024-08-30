@@ -36,7 +36,9 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
             services.AddScoped<IDownloadService, DownloadService>();
+            services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
+            services.Configure<BackupBackendOptions>(Configuration.GetSection("BackupBackend"));
             services.AddHealthChecks();
             services.AddControllers()
                 .AddNewtonsoftJson();

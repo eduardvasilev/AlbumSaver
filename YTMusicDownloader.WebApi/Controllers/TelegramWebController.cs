@@ -9,6 +9,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using YTMusicDownloader.WebApi.Model;
 using YTMusicDownloader.WebApi.Services;
+using Newtonsoft.Json;
 
 namespace YTMusicDownloader.WebApi.Controllers
 {
@@ -165,6 +166,33 @@ namespace YTMusicDownloader.WebApi.Controllers
         public async Task<IActionResult> GetArtistImage(string channelUrl, CancellationToken cancellationToken)
         {
             return Ok(await _telegramService.GetArtistImageAsync(channelUrl, cancellationToken));
+        }
+
+        [HttpPost("/callback")]
+
+        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
+        {
+            Update? update;
+            try
+            {
+                update = JsonConvert.DeserializeObject<Update>(request.ToString());
+
+            }
+            catch (Exception)
+            {
+                return Ok();
+            }
+
+            if (update is { PreCheckoutQuery: { } })
+            {
+                var preCheckoutQuery = update.PreCheckoutQuery;
+                await _botService.Client.AnswerPreCheckoutQueryAsync(
+                    preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
+                await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+
+            }
+            //call and forget
+            return Ok();
         }
     }
 }

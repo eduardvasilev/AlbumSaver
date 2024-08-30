@@ -21,14 +21,17 @@ namespace YTMusicDownloader.WebApi.Services
     {
         private readonly IUpdateService _updateService;
         private readonly IBotService _botService;
+        private readonly IBackupBackendService _backupBackendService;
         private readonly YoutubeClient _youtubeClient;
 
         public TelegramService(IUpdateService updateService, 
-            IBotService botService
+            IBotService botService,
+            IBackupBackendService backupBackendService
             )
         {
             _updateService = updateService;
             _botService = botService;
+            _backupBackendService = backupBackendService;
             _youtubeClient = new YoutubeClient();
         }
 
@@ -198,9 +201,21 @@ namespace YTMusicDownloader.WebApi.Services
         {
             Playlist result =
                 (await _youtubeClient.Playlists.GetAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl)));
-
-            var videos =
-                await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl));
+            IReadOnlyList<PlaylistVideo> videos;
+            try
+            {
+                videos =
+                    await _youtubeClient.Playlists.GetVideosAsync(PlaylistId.Parse(request.YouTubeMusicPlaylistUrl));
+            }
+            catch (Exception e)
+            {
+                if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
+                {
+                    throw;
+                }
+                return;
+            }
+          
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
             InputFileUrl inputOnlineFile = new InputFileUrl(thumbnail);

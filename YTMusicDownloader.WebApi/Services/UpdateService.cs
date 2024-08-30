@@ -32,13 +32,15 @@ namespace YTMusicDownloader.WebApi.Services
     public class UpdateService : IUpdateService
     {
         private readonly IBotService _botService;
+        private readonly IBackupBackendService _backupBackendService;
         private readonly TelemetryClient _telemetryClient;
         private readonly YoutubeClient _youtube;
         private readonly HttpClient _httpClient;
 
-        public UpdateService(IBotService botService, IHttpClientFactory httpClientFactory, TelemetryClient telemetryClient)
+        public UpdateService(IBotService botService, IBackupBackendService backupBackendService, TelemetryClient telemetryClient)
         {
             _botService = botService;
+            _backupBackendService = backupBackendService;
             _telemetryClient = telemetryClient;
 
             var baseAddress = new Uri("https://music.youtube.com");
@@ -303,8 +305,11 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 _telemetryClient.TrackException(exception);
 
-                await _botService.Client.SendTextMessageAsync(chatId,
-                    $"Sorry, we couldn't send the track: {video.Title}. Please try again.");
+                if (!await _backupBackendService.TrySendMusicAsync(chatId, video.Url, Model.EntityType.Track))
+                {
+                    await _botService.Client.SendTextMessageAsync(chatId,
+                        $"Sorry, we couldn't send the track: {video.Title}. Our service may be blocked. But we will definitely be back");
+                }
             }
         }
 
