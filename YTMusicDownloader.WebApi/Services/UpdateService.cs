@@ -304,7 +304,12 @@ namespace YTMusicDownloader.WebApi.Services
             catch(Exception exception)
             {
                 _telemetryClient.TrackException(exception);
-                throw exception;
+
+                if (!await _backupBackendService.TrySendMusicAsync(chatId, video.Url, Model.EntityType.Track))
+                {
+                    await _botService.Client.SendTextMessageAsync(chatId,
+                        $"Sorry, we couldn't send the track: {video.Title}. Our service may be blocked. But we will definitely be back");
+                }
             }
         }
 

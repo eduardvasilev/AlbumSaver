@@ -14,7 +14,6 @@ using YoutubeExplode.Common;
 using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YTMusicDownloader.WebApi.Model;
-using Microsoft.ApplicationInsights;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -216,6 +215,7 @@ namespace YTMusicDownloader.WebApi.Services
                 }
                 return;
             }
+          
 
             string thumbnail = result.Thumbnails.LastOrDefault()?.Url;
             InputFileUrl inputOnlineFile = new InputFileUrl(thumbnail);
@@ -231,18 +231,7 @@ namespace YTMusicDownloader.WebApi.Services
 
                 foreach (PlaylistVideo playlistVideo in videos)
                 {
-                    try
-                    {
-                        await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
-                    }
-                    catch (Exception)
-                    {
-                        if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
-                        {
-                            await _botService.Client.SendTextMessageAsync(request.UserId,
-                                $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
-                        }
-                    }
+                    await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
                 }
             }
 
@@ -255,18 +244,7 @@ namespace YTMusicDownloader.WebApi.Services
 
 
             InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
-            try
-            {
-                await _updateService.SendSongAsync(request.UserId, result, thumb);
-            }
-            catch (Exception)
-            {
-                if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Track))
-                {
-                    await _botService.Client.SendTextMessageAsync(request.UserId,
-                        $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
-                }
-            }
+            await _updateService.SendSongAsync(request.UserId, result, thumb);
             await SendDonateMessage(request.UserId);
         }
 
@@ -278,18 +256,7 @@ namespace YTMusicDownloader.WebApi.Services
 
                 InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
-                try
-                {
-                    await _updateService.SendSongAsync(request.UserId, result, thumb);
-                }
-                catch (Exception)
-                {
-                    if (!await _backupBackendService.TrySendMusicAsync(request.UserId, result.Url, Model.EntityType.Track))
-                    {
-                        await _botService.Client.SendTextMessageAsync(request.UserId,
-                            $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
-                    }
-                }
+                await _updateService.SendSongAsync(request.UserId, result, thumb);
             }
 
             await SendDonateMessage(request.UserId);
@@ -297,6 +264,7 @@ namespace YTMusicDownloader.WebApi.Services
 
         private async Task SendDonateMessage(long userId)
         {
+            DownloadSetRequest request;
             await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
                 "Support us so we can add new features",
                 Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
