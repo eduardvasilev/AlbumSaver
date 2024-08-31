@@ -15,6 +15,7 @@ using YoutubeExplode.Playlists;
 using YoutubeExplode.Videos;
 using YTMusicDownloader.WebApi.Model;
 using Microsoft.ApplicationInsights;
+using Newtonsoft.Json;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -235,7 +236,7 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         await _updateService.SendSongAsync(request.UserId, playlistVideo, thumb);
                     }
-                    catch (Exception)
+                    catch (JsonReaderException)
                     {
                         if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
                         {
@@ -263,7 +264,7 @@ namespace YTMusicDownloader.WebApi.Services
             {
                 await _updateService.SendSongAsync(request.UserId, result, thumb);
             }
-            catch (Exception)
+            catch (JsonReaderException)
             {
                 if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Track))
                 {
@@ -290,7 +291,7 @@ namespace YTMusicDownloader.WebApi.Services
                 {
                     await _updateService.SendSongAsync(request.UserId, result, thumb);
                 }
-                catch (Exception)
+                catch (JsonReaderException)
                 {
                     if (!await _backupBackendService.TrySendMusicAsync(request.UserId, result.Url, Model.EntityType.Track))
                     {
