@@ -137,7 +137,6 @@ public class DownloadService : IDownloadService
 
     private async Task SendDonateMessage(long userId)
     {
-        DownloadSetRequest request;
         await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
             "Support us so we can add new features",
             Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
