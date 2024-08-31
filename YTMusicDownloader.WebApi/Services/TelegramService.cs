@@ -242,10 +242,6 @@ namespace YTMusicDownloader.WebApi.Services
                             await _botService.Client.SendTextMessageAsync(request.UserId,
                                 $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
                         }
-                        else
-                        {
-                            return;
-                        }
                     }
                 }
             }
@@ -270,10 +266,6 @@ namespace YTMusicDownloader.WebApi.Services
                     await _botService.Client.SendTextMessageAsync(request.UserId,
                         $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
                 }
-                else
-                {
-                    return;
-                }
             }
             await SendDonateMessage(request.UserId);
         }
@@ -296,10 +288,6 @@ namespace YTMusicDownloader.WebApi.Services
                     {
                         await _botService.Client.SendTextMessageAsync(request.UserId,
                             $"Sorry, we couldn't send the track: {result.Title}. Our service may be blocked. But we will definitely be back");
-                    }
-                    else
-                    {
-                        return;
                     }
                 }
             }
