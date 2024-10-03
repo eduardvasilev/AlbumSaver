@@ -121,7 +121,9 @@ public class DownloadService : IDownloadService
 
     private async Task SendSongInternalAsync(long chatId, Track track, InputFileUrl thump, CancellationToken cancellationToken)
     {
-        await using Stream stream = await GetAudioStreamAsync(track, CancellationToken.None);
+        await using Stream stream = System.IO.File.OpenRead(track.Url);
+
+        //await using Stream stream = await GetAudioStreamAsync(track, CancellationToken.None);
         await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title),
             cancellationToken: CancellationToken.None,
             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
