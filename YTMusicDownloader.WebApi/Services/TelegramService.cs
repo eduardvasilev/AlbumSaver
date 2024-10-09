@@ -22,16 +22,19 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly IUpdateService _updateService;
         private readonly IBotService _botService;
         private readonly IBackupBackendService _backupBackendService;
+        private readonly IPaymentService _paymentService;
         private readonly YoutubeClient _youtubeClient;
 
         public TelegramService(IUpdateService updateService, 
             IBotService botService,
-            IBackupBackendService backupBackendService
+            IBackupBackendService backupBackendService,
+            IPaymentService paymentService
             )
         {
             _updateService = updateService;
             _botService = botService;
             _backupBackendService = backupBackendService;
+            _paymentService = paymentService;
             _youtubeClient = new YoutubeClient();
         }
 
@@ -235,7 +238,7 @@ namespace YTMusicDownloader.WebApi.Services
                 }
             }
 
-            await SendDonateMessage(request.UserId);
+            await _paymentService.SendDonateMessageAsync(request.UserId);
         }
 
         public async Task SendTrackAsync(DownloadRequest request)
@@ -245,7 +248,7 @@ namespace YTMusicDownloader.WebApi.Services
 
             InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
             await _updateService.SendSongAsync(request.UserId, result, thumb);
-            await SendDonateMessage(request.UserId);
+            await _paymentService.SendDonateMessageAsync(request.UserId);
         }
 
         public async Task SendTracksSetAsync(DownloadSetRequest request)
@@ -259,15 +262,7 @@ namespace YTMusicDownloader.WebApi.Services
                 await _updateService.SendSongAsync(request.UserId, result, thumb);
             }
 
-            await SendDonateMessage(request.UserId);
-        }
-
-        private async Task SendDonateMessage(long userId)
-        {
-            DownloadSetRequest request;
-            await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
-                "Support us so we can add new features",
-                Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
+            await _paymentService.SendDonateMessageAsync(request.UserId);
         }
 
         public async Task<ResultObject<List<MusicSearchResult>>> GetReleases()
