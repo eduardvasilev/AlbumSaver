@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.ReplyMarkups;
 using YTMusicDownloader.WebApi.Services;
 
 namespace YTMusicDownloader.WebApi.Controllers
@@ -46,6 +48,21 @@ namespace YTMusicDownloader.WebApi.Controllers
                     preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
                 await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
 
+                return Ok();
+            }
+            var inputText = update?.Message?.Text ?? update?.CallbackQuery?.Data;
+            if (inputText?.StartsWith("/feedback") == true)
+            {
+
+                await _botService.Client.SendTextMessageAsync(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, "Please describe your idea or issue.", replyMarkup:
+                    new ForceReplyMarkup(), cancellationToken: cancellationToken);
+                return Ok();
+            }
+
+            if (update?.Message?.ReplyToMessage != null && update?.Message?.ReplyToMessage.Text == "Please describe your idea or issue." && update?.Message?.Text != null)
+            {
+                await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
+                return Ok();
             }
             //call and forget
             return Ok();
