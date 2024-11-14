@@ -63,7 +63,7 @@ namespace YTMusicDownloader.WebApi.Controllers
                 await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
                 return Ok();
             }
-            //call and forget
+            
             return Ok();
         }
 
