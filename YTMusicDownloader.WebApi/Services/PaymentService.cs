@@ -22,7 +22,7 @@ public class PaymentService : IPaymentService
         if (_options.Value.AskForDonate)
         {
             await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
-                "Support us so we can add new features",
+                "Support us so we can add new features. Use /feedback command for your suggestions",
                 Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1)});
         }
     }
