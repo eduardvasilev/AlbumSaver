@@ -10,6 +10,7 @@ using YTMusicAPI;
 using YTMusicAPI.Abstraction;
 using YTMusicDownloader.WebApi.Services;
 using Asp.Versioning;
+using YTMusicDownloader.WebApi.Services.Telegram;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -38,6 +39,7 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<IDownloadService, DownloadService>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
+            services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
             services.Configure<BackupBackendOptions>(Configuration.GetSection("BackupBackend"));
             services.Configure<PaymentOptions>(Configuration.GetSection("Payment"));
