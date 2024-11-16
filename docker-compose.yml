@@ -6,27 +6,21 @@ services:
     networks:
       - musicsaver-network
   frontend:
-    image: 'nginx:alpine'
+    image: nginx:alpine
     container_name: musicsaver_frontend
     volumes:
-       - './nginx.conf:/etc/nginx/nginx.conf:ro'
-       - '/var/log/letsencrypt/:/var/log/letsencrypt'
-       - '/var/run/docker.sock:/var/run/docker.sock'
-       - '/etc/letsencrypt:/etc/letsencrypt'
-       - '/var/lib/letsencrypt:/var/lib/letsencrypt'
-       - '/tmp/letsencrypt/www:/tmp/letsencrypt/www'
-       - './certs:/etc/nginx/certs'
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
       - backend
     ports:
-      - '80:80'
+      - "80:80"
     networks:
       - musicsaver-network
   redis:
     image: redis:latest
     container_name: musicsaver_redis
     ports:
-      - '6379:6379'
+      - "6379:6379"
     command: ["redis-server", "--appendonly", "no", "--maxmemory", "50mb", "--maxmemory-policy", "allkeys-lru"]
     
 networks:
