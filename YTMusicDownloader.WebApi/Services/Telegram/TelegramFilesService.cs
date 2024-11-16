@@ -9,7 +9,7 @@ public class TelegramFilesService : ITelegramFilesService
 
     public TelegramFilesService()
     {
-        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("host.docker.internal:6379");
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
         _db = redis.GetDatabase();
     }
 
