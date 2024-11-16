@@ -26,6 +26,7 @@ using YoutubeExplode.Exceptions;
 using YTMusicAPI;
 using YTMusicAPI.Model.Domain;
 using Microsoft.ApplicationInsights;
+using YTMusicDownloader.WebApi.Services.Telegram;
 
 namespace YTMusicDownloader.WebApi.Services
 {
@@ -34,14 +35,16 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly IBotService _botService;
         private readonly IBackupBackendService _backupBackendService;
         private readonly TelemetryClient _telemetryClient;
+        private readonly ITelegramFilesService _telegramFilesService;
         private readonly YoutubeClient _youtube;
         private readonly HttpClient _httpClient;
 
-        public UpdateService(IBotService botService, IBackupBackendService backupBackendService, TelemetryClient telemetryClient)
+        public UpdateService(IBotService botService, IBackupBackendService backupBackendService, TelemetryClient telemetryClient, ITelegramFilesService telegramFilesService)
         {
             _botService = botService;
             _backupBackendService = backupBackendService;
             _telemetryClient = telemetryClient;
+            _telegramFilesService = telegramFilesService;
 
             var baseAddress = new Uri("https://music.youtube.com");
             var cookieContainer = new CookieContainer();
@@ -315,14 +318,28 @@ namespace YTMusicDownloader.WebApi.Services
 
         private async Task SendSongInternalAsync(long chatId, IVideo video, InputFileUrl thump)
         {
+            string fileId = await _telegramFilesService.GetFileIdAsync(video.Url);
+
+            if (fileId != null)
+            {
+                await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
+                    cancellationToken: CancellationToken.None,
+                    duration: (video.Duration.HasValue ? (int?)video.Duration.Value.TotalSeconds : null),
+                    parseMode: ParseMode.Html, thumbnail: thump, title: video.Title, disableNotification: true, performer: video.Author.ChannelTitle);
+
+                return;
+            }
+
             var videoId = VideoId.Parse(video.Id);
 
             await using (Stream stream = await GetAudioStreamAsync(videoId, CancellationToken.None))
             {
-                await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, video.Title), 
+                var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, video.Title), 
                     cancellationToken: CancellationToken.None,
                     duration: (video.Duration.HasValue ? (int?) video.Duration.Value.TotalSeconds : null),
                     parseMode: ParseMode.Html, thumbnail:  thump, title: video.Title, disableNotification: true, performer: video.Author.ChannelTitle);
+
+                await _telegramFilesService.SetFileIdAsync(video.Url, sendAudioAsync.Audio.FileId);
             }
      
         }

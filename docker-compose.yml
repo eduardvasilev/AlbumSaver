@@ -16,7 +16,13 @@ services:
       - "80:80"
     networks:
       - musicsaver-network
-
+  redis:
+    image: redis:latest
+    container_name: musicsaver_redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "no", "--maxmemory", "50mb", "--maxmemory-policy", "allkeys-lru"]
+    
 networks:
   musicsaver-network:
     external: true
