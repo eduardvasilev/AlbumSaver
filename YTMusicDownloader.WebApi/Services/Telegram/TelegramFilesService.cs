@@ -9,7 +9,7 @@ public class TelegramFilesService : ITelegramFilesService
 
     public TelegramFilesService()
     {
-        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("localhost");
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("musicsaver_redis:6379");
         _db = redis.GetDatabase();
     }
 
