@@ -334,7 +334,7 @@ namespace YTMusicDownloader.WebApi.Services
 
             await using (Stream stream = await GetAudioStreamAsync(videoId, CancellationToken.None))
             {
-                var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, video.Title), 
+                var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, video.Title + ".mp3"), 
                     cancellationToken: CancellationToken.None,
                     duration: (video.Duration.HasValue ? (int?) video.Duration.Value.TotalSeconds : null),
                     parseMode: ParseMode.Html, thumbnail:  thump, title: video.Title, disableNotification: true, performer: video.Author.ChannelTitle);
