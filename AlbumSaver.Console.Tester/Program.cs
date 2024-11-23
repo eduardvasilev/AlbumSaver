@@ -6,6 +6,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using YTMusicDownloader.WebApi.Services;
+using YTMusicDownloader.WebApi.Services.Telegram;
 
 
 var serviceProvider = new ServiceCollection()
@@ -19,7 +20,7 @@ var botClient = new TelegramBotClient("");
 UpdateService updateService = new UpdateService(new BotService()
 {
     Client = botClient
-}, factory, new TelemetryClient());
+}, new BackupBackendService(factory, null), new TelemetryClient(), new TelegramFilesService());
 
 var receiverOptions = new ReceiverOptions
 {

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
@@ -12,10 +13,13 @@ using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.Payments;
+using YoutubeExplode.Videos;
 using YTMusicAPI.Abstraction;
+using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
 using YTMusicAPI.Utils;
 using YTMusicDownloader.WebApi.Model;
+using EntityType = YTMusicAPI.Model.EntityType;
 
 namespace YTMusicDownloader.WebApi.Services;
 
@@ -24,19 +28,34 @@ public class DownloadService : IDownloadService
     private readonly IBotService _botService;
     private readonly ITrackClient _trackClient;
     private readonly TelemetryClient _telemetryClient;
+    private readonly IBackupBackendService _backupBackendService;
     private readonly HttpClient _httpClient;
 
-    public DownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient, IHttpClientFactory httpClientFactory)
+    public DownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
+        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService)
     {
         _botService = botService;
         _trackClient = trackClient;
         _telemetryClient = telemetryClient;
+        _backupBackendService = backupBackendService;
         _httpClient = httpClientFactory.CreateClient();
     }
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
-        var result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, cancellationToken);
+        AlbumTracksResult result;
+        try
+        {
+            result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, cancellationToken);
+        }
+        catch (Exception exception)
+        {
+            if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
+            {
+                throw exception;
+            }
+            return;
+        }
 
         if (result != null && result.Tracks.Any())
         {
@@ -92,14 +111,19 @@ public class DownloadService : IDownloadService
         {
             _telemetryClient.TrackException(exception);
 
-            await _botService.Client.SendTextMessageAsync(chatId,
-                $"Sorry, we couldn't send the track: {track.Title}. Please try again.");
+            if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
+            {
+                await _botService.Client.SendTextMessageAsync(chatId,
+                    $"Sorry, we couldn't send the track: {track.Title}. Our service may be blocked. But we will definitely be back");
+            }
         }
     }
 
     private async Task SendSongInternalAsync(long chatId, Track track, InputFileUrl thump, CancellationToken cancellationToken)
     {
-        await using Stream stream = await GetAudioStreamAsync(track, CancellationToken.None);
+        await using Stream stream = System.IO.File.OpenRead(track.Url);
+
+        //await using Stream stream = await GetAudioStreamAsync(track, CancellationToken.None);
         await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title),
             cancellationToken: CancellationToken.None,
             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
@@ -117,7 +141,7 @@ public class DownloadService : IDownloadService
     {
         DownloadSetRequest request;
         await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
-            "Support us so we can add new features",
+            "Support us so we can add new features. Use /feedback command for your suggestions",
             Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
     }
 }
