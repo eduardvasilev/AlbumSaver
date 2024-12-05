@@ -1,12 +1,12 @@
-﻿using System;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Payments;
+using Telegram.Bot.Types.ReplyMarkups;
 using YoutubeExplode;
 using YoutubeExplode.Bridge;
 using YoutubeExplode.Channels;
@@ -17,6 +17,17 @@ using YTMusicDownloader.WebApi.Model;
 
 namespace YTMusicDownloader.WebApi.Services
 {
+    public class Referal
+    {
+        public Referal(string title, string url)
+        {
+            Title = title;
+            Url = url;
+        }
+        public string Title { get; set; }
+
+        public string Url { get; set; }
+    }
     public class TelegramService : ITelegramService
     {
         private readonly IUpdateService _updateService;
@@ -24,6 +35,14 @@ namespace YTMusicDownloader.WebApi.Services
         private readonly IBackupBackendService _backupBackendService;
         private readonly IPaymentService _paymentService;
         private readonly YoutubeClient _youtubeClient;
+
+        private readonly List<Referal> referals = new List<Referal>
+        {
+            new("1win | Payment App", "https://t.me/onewin_pay_bot?start=_tgr_0MG4fL05MDli"),
+            new("My Society", "https://t.me/TheMySocietyBot?start=_tgr_-yDbr04yNzcy"),
+        };
+
+        private Random _random;
 
         public TelegramService(IUpdateService updateService, 
             IBotService botService,
@@ -36,6 +55,7 @@ namespace YTMusicDownloader.WebApi.Services
             _backupBackendService = backupBackendService;
             _paymentService = paymentService;
             _youtubeClient = new YoutubeClient();
+            _random = new Random();
         }
 
         public async Task<PagingResult<MusicSearchResult>> Search(string query,
@@ -224,12 +244,24 @@ namespace YTMusicDownloader.WebApi.Services
             InputFileUrl inputOnlineFile = new InputFileUrl(thumbnail);
             InputFileUrl thumb = new InputFileUrl(result.Thumbnails.FirstOrDefault()?.Url);
 
+            var next = _random.Next(0, 100);
+            bool sendRefereal = next < 30;
             if (videos.Any())
             {
                 if (!string.IsNullOrWhiteSpace(thumbnail))
                 {
-                    await _botService.Client.SendPhotoAsync(request.UserId,
-                        inputOnlineFile, caption: $"{result.Author} - {result.Title}");
+                    if (!sendRefereal)
+                    {
+                        await _botService.Client.SendPhotoAsync(request.UserId,
+                            inputOnlineFile, caption: $"{result.Author} - {result.Title}");
+                    }
+                    else
+                    {
+                        var urlButton = GetRefereal();
+
+                        await _botService.Client.SendPhotoAsync(request.UserId,
+                            inputOnlineFile, caption: $"{result.Author} - {result.Title}", replyMarkup: new InlineKeyboardMarkup(urlButton));
+                    }
                 }
 
                 foreach (PlaylistVideo playlistVideo in videos)
@@ -238,7 +270,19 @@ namespace YTMusicDownloader.WebApi.Services
                 }
             }
 
-            await _paymentService.SendDonateMessageAsync(request.UserId);
+            if (!sendRefereal)
+            {
+                await _paymentService.SendDonateMessageAsync(request.UserId);
+            }
+        }
+
+        private InlineKeyboardButton GetRefereal()
+        {
+            var referealIndex = _random.Next(referals.Count);
+            var referal = referals[referealIndex];
+            InlineKeyboardButton urlButton = new InlineKeyboardButton(referal.Title);
+            urlButton.Url = referal.Url;
+            return urlButton;
         }
 
         public async Task SendTrackAsync(DownloadRequest request)
