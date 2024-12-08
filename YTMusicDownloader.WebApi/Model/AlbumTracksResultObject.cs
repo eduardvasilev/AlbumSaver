@@ -11,5 +11,6 @@ public class AlbumTracksResultObject<T> : ResultObject<T>
     public string AlbumTitle { get; set; }
     public string ArtistName { get; set; }
     public string AlbumImage { get; set; }
+    public string AlbumImageConst { get; set; }
     public string ChannelUrl { get; set; }
 }

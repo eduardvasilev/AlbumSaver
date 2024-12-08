@@ -144,6 +144,7 @@ namespace YTMusicDownloader.WebApi.Services
 
 
             result.AlbumImage = album.Thumbnails.Skip(1).FirstOrDefault()?.Url;
+            result.AlbumImageConst = (videos.FirstOrDefault()?.Thumbnails)?.MaxBy(x => x.Resolution.Width)?.Url;
             result.AlbumTitle = album.Title;
             result.ChannelUrl = album.Author?.ChannelId;
             result.ArtistName = album.Author?.Title;
