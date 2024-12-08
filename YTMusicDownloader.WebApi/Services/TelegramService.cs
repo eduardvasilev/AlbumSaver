@@ -143,7 +143,7 @@ namespace YTMusicDownloader.WebApi.Services
             }));
 
 
-            result.AlbumImage = album.Thumbnails.FirstOrDefault()?.Url;
+            result.AlbumImage = album.Thumbnails.Skip(1).FirstOrDefault()?.Url;
             result.AlbumTitle = album.Title;
             result.ChannelUrl = album.Author?.ChannelId;
             result.ArtistName = album.Author?.Title;
