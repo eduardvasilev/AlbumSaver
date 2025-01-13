@@ -38,8 +38,9 @@ namespace YTMusicDownloader.WebApi.Services
 
         private readonly List<Referal> referals = new List<Referal>
         {
-            new("1win | Payment App", "https://t.me/onewin_pay_bot?start=_tgr_0MG4fL05MDli"),
             new("My Society", "https://t.me/TheMySocietyBot?start=_tgr_-yDbr04yNzcy"),
+            new("#solohash", "https://t.me/Solohashbot?start=_tgr_5pDPj7NkY2Yy"),
+            new("#StarsHash", "https://t.me/starshash_bot?start=_tgr_7crlyuVjNTg6"),
         };
 
         private Random _random;
