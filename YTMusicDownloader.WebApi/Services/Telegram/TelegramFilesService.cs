@@ -1,5 +1,6 @@
 ﻿using StackExchange.Redis;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 
 namespace YTMusicDownloader.WebApi.Services.Telegram;
 
@@ -7,9 +8,9 @@ public class TelegramFilesService : ITelegramFilesService
 {
     private IDatabase _db;
 
-    public TelegramFilesService()
+    public TelegramFilesService(IOptions<RedisOptions> redisOptions)
     {
-        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect("musicsaver_redis:6379");
+        ConnectionMultiplexer redis = ConnectionMultiplexer.Connect(redisOptions.Value.Connection);
         _db = redis.GetDatabase();
     }
 
@@ -21,5 +22,18 @@ public class TelegramFilesService : ITelegramFilesService
     public async Task SetFileIdAsync(string trackUrl, string fileId)
     {
         await _db.StringSetAsync(trackUrl, fileId);
+    }
+}
+
+public class MockTelegramFilesService : ITelegramFilesService
+{
+    public Task<string> GetFileIdAsync(string trackUrl)
+    {
+        return null;
+    }
+
+    public Task SetFileIdAsync(string trackUrl, string fileId)
+    {
+        return Task.CompletedTask;
     }
 }

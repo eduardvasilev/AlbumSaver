@@ -20,7 +20,7 @@ var botClient = new TelegramBotClient("");
 UpdateService updateService = new UpdateService(new BotService()
 {
     Client = botClient
-}, new BackupBackendService(factory, null), new TelemetryClient(), new TelegramFilesService());
+}, new BackupBackendService(factory, null), new TelemetryClient(), new TelegramFilesService(null), null, null);
 
 var receiverOptions = new ReceiverOptions
 {
@@ -30,7 +30,7 @@ var receiverOptions = new ReceiverOptions
 
 botClient.StartReceiving(
     updateHandler: HandleUpdateAsync,
-    pollingErrorHandler: HandlePollingErrorAsync,
+    errorHandler: HandlePollingErrorAsync,
     receiverOptions: receiverOptions,
     CancellationToken.None
 );

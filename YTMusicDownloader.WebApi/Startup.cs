@@ -39,10 +39,21 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<IDownloadService, DownloadService>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
-            services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
             services.Configure<BackupBackendOptions>(Configuration.GetSection("BackupBackend"));
             services.Configure<PaymentOptions>(Configuration.GetSection("Payment"));
+            var redisConfig = Configuration.GetSection("Redis");
+            services.Configure<RedisOptions>(redisConfig);
+
+            if (redisConfig.GetValue<bool>("Enabled"))
+            {
+                services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
+            }
+            else
+            {
+                services.AddSingleton<ITelegramFilesService, MockTelegramFilesService>();
+            }
+
             services.AddHealthChecks();
             services.AddControllers()
                 .AddNewtonsoftJson();

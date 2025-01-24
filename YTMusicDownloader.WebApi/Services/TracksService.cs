@@ -28,10 +28,10 @@ public class TracksService : ITracksService
             var result = new ResultObject<IEnumerable<MusicSearchResult>>(searchResult.Tracks.Select(x => new MusicSearchResult
             {
                 Author = x.Author,
-                ImageUrl = x.Thumbnails.LastOrDefault()?.Url,
+                ImageUrl = x.Thumbnails.OrderByDescending(x => x.Resolution?.Width).Skip(1).FirstOrDefault()?.Url,
                 RecordType = "track",
                 Title = x.Title,
-                YouTubeMusicPlaylistUrl = albumUrl
+                YouTubeMusicPlaylistUrl = albumUrl,
             }));
 
             cache = result;
