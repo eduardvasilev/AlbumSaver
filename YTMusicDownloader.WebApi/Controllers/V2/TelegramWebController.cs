@@ -84,13 +84,13 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
                 YouTubeMusicPlaylistUrl = x.YouTubeMusicPlaylistUrl,
             }));
 
+            var track = tracks.Result.FirstOrDefault();
             var youtube = new YoutubeClient();
             var album = await youtube.Playlists.GetAsync(PlaylistId.Parse(albumUrl));
-            result.AlbumImage = album.Thumbnails.Skip(1).FirstOrDefault()?.Url;
-            result.AlbumImageConst = tracks.Result.FirstOrDefault()?.ImageUrl;
+            result.AlbumImage = track?.ImageUrl;
+            result.AlbumImageConst = track?.ImageUrl;
             result.AlbumTitle = album.Title;
-            result.ChannelUrl = album.Author?.ChannelId;
-            result.ArtistName = album.Author?.Title;
+            result.ArtistName = track?.Author;
             return Ok(result);
         }
 
