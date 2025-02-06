@@ -87,7 +87,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
             var track = tracks.Result.FirstOrDefault();
             var youtube = new YoutubeClient();
             var album = await youtube.Playlists.GetAsync(PlaylistId.Parse(albumUrl));
-            result.AlbumImage = track?.ImageUrl;
+            result.AlbumImage = album.Thumbnails.Skip(1).FirstOrDefault()?.Url;
             result.AlbumImageConst = track?.ImageUrl;
             result.AlbumTitle = album.Title;
             result.ArtistName = track?.Author;
