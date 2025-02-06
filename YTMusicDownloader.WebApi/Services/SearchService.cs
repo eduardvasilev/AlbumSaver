@@ -58,7 +58,7 @@ public class SearchService : ISearchService
 
     public async Task<PagingResult<MusicSearchResult>> SearchTracksAsync(QueryRequest queryRequest, CancellationToken cancellationToken)
     {
-        if (queryRequest.ContinuationNeed == true || !_memoryCache.TryGetValue(queryRequest.Query+queryRequest.ContinuationData?.Token, out PagingResult<MusicSearchResult> cache))
+        if (queryRequest.ContinuationNeed == true || !_memoryCache.TryGetValue("track"+queryRequest.Query+queryRequest.ContinuationData?.Token, out PagingResult<MusicSearchResult> cache))
         {
             var searchResult = (await _searchClient.SearchTracksAsync(queryRequest, cancellationToken));
             var result = new PagingResult<MusicSearchResult>(searchResult.Result.Select(x => new MusicSearchResult
@@ -80,7 +80,7 @@ public class SearchService : ISearchService
             var cacheEntryOptions = new MemoryCacheEntryOptions()
                 .SetSlidingExpiration(TimeSpan.FromHours(1));
 
-            _memoryCache.Set(queryRequest.Query + queryRequest.ContinuationData?.Token, result, cacheEntryOptions);
+            _memoryCache.Set("track" + queryRequest.Query + queryRequest.ContinuationData?.Token, result, cacheEntryOptions);
         }
       
         return cache;
