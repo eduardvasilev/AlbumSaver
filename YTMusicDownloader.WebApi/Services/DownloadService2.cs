@@ -136,18 +136,6 @@ public class DownloadService2 : IDownloadService
             author = author.Substring(0, author.Length - topic.Length);
         }
 
-        string fileId = await _telegramFilesService.GetFileIdAsync(track.Url);
-
-        if (fileId != null)
-        {
-            await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
-                    cancellationToken: CancellationToken.None,
-                    duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-                    parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true, performer: track.Author.ChannelTitle);
-
-            return;
-        }
-
         await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
         var sendAudioAsync = await _botService.Client.SendAudio(chatId, new InputFileStream(stream, track.Title),
@@ -156,7 +144,6 @@ public class DownloadService2 : IDownloadService
             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
             performer: author, protectContent: false);
 
-        await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
 
     public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
