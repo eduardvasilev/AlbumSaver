@@ -21,7 +21,6 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
     [ApiVersion(2)]
     public class TelegramWebController : ControllerBase 
     { 
-        private readonly ITelegramService _telegramService;
         private readonly ISearchService _searchService;
         private readonly ITracksService _tracksService;
         private readonly IArtistsService _artistsService;
@@ -29,10 +28,9 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         private readonly IBotService _botService;
         private readonly TelemetryClient _telemetryClient;
 
-        public TelegramWebController(ITelegramService telegramService, ISearchService searchService,
+        public TelegramWebController(ISearchService searchService,
             ITracksService tracksService, IArtistsService artistsService, IDownloadService downloadService, IBotService botService, TelemetryClient telemetryClient)
         {
-            _telegramService = telegramService;
             _searchService = searchService;
             _tracksService = tracksService;
             _artistsService = artistsService;
@@ -77,23 +75,23 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         }
 
         //TODO migrate to lib
-        [HttpGet("/artist/tracks")]
-        [HttpGet("/artist-tracks")]
-        [ResponseCache(Duration = 43200)]
-        public async Task<IActionResult> TracksByArtist(string channelUrl, bool continuation,
-            string continuationToken,
-            string token, int? takeCount, CancellationToken cancellationToken)
-        {
-            var tracksByArtistAsync = await _telegramService.GetTracksByArtistAsync(channelUrl, continuation, continuationToken, token, cancellationToken);
+        //[HttpGet("/artist/tracks")]
+        //[HttpGet("/artist-tracks")]
+        //[ResponseCache(Duration = 43200)]
+        //public async Task<IActionResult> TracksByArtist(string channelUrl, bool continuation,
+        //    string continuationToken,
+        //    string token, int? takeCount, CancellationToken cancellationToken)
+        //{
+        //    var tracksByArtistAsync = await _telegramService.GetTracksByArtistAsync(channelUrl, continuation, continuationToken, token, cancellationToken);
 
-            if (takeCount.HasValue)
-            {
-                //be careful with pagination. Tracks could be skipped
-                tracksByArtistAsync.Result = tracksByArtistAsync.Result.Take(takeCount.Value);
-            }
+        //    if (takeCount.HasValue)
+        //    {
+        //        //be careful with pagination. Tracks could be skipped
+        //        tracksByArtistAsync.Result = tracksByArtistAsync.Result.Take(takeCount.Value);
+        //    }
 
-            return Ok(tracksByArtistAsync);
-        }
+        //    return Ok(tracksByArtistAsync);
+        //}
 
         [HttpGet("/releases")]
         [ResponseCache(Duration = 43200)]
@@ -167,16 +165,16 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         }
 
 
-        [HttpGet("/artists/albums")]
-        public async Task<IActionResult> GetArtistAlbums(string channelUrl, int? takeCount, CancellationToken cancellationToken)
-        {
-            var albumsByArtistAsync = await _telegramService.GetAlbumsByArtistAsync(channelUrl, cancellationToken);
-            if (takeCount.HasValue)
-            {
-                albumsByArtistAsync.Result = albumsByArtistAsync.Result.Take(takeCount.Value);
-            }
-            return Ok(albumsByArtistAsync);
-        }  
+        //[HttpGet("/artists/albums")]
+        //public async Task<IActionResult> GetArtistAlbums(string channelUrl, int? takeCount, CancellationToken cancellationToken)
+        //{
+        //    var albumsByArtistAsync = await _telegramService.GetAlbumsByArtistAsync(channelUrl, cancellationToken);
+        //    if (takeCount.HasValue)
+        //    {
+        //        albumsByArtistAsync.Result = albumsByArtistAsync.Result.Take(takeCount.Value);
+        //    }
+        //    return Ok(albumsByArtistAsync);
+        //}  
         
         [HttpGet("/artists/image")]
         public async Task<IActionResult> GetArtistImage(string channelUrl, CancellationToken cancellationToken)

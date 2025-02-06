@@ -11,6 +11,7 @@ using YTMusicAPI.Abstraction;
 using YTMusicDownloader.WebApi.Services;
 using Asp.Versioning;
 using YTMusicDownloader.WebApi.Services.Telegram;
+using YoutubeExplode;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -26,17 +27,18 @@ namespace YTMusicDownloader.WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<IUpdateService, UpdateService>();
+            //services.AddScoped<IUpdateService, UpdateService>();
             services.AddScoped<ISearchService, SearchService>();
             services.AddScoped<ITracksService, TracksService>();
             services.AddScoped<IReleasesClient, ReleasesClient>();
             services.AddScoped<IArtistsService, ArtistsService>();
             services.AddSingleton<IBotService, BotService>();
-            services.AddScoped<ITelegramService, TelegramService>();
+            //services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
-            services.AddScoped<IDownloadService, DownloadService>();
+            services.AddScoped<IDownloadService, DownloadService2>();
+            services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
@@ -74,7 +76,7 @@ namespace YTMusicDownloader.WebApi
 
             services.AddApiVersioning(options =>
             {
-                options.DefaultApiVersion = new ApiVersion(1);
+                options.DefaultApiVersion = new ApiVersion(2);
                 options.ReportApiVersions = true;
                 options.AssumeDefaultVersionWhenUnspecified = true;
                 options.ApiVersionReader = ApiVersionReader.Combine(

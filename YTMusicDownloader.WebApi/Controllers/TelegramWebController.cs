@@ -22,12 +22,14 @@ namespace YTMusicDownloader.WebApi.Controllers
         private readonly ITelegramService _telegramService;
         private readonly IBotService _botService;
         private readonly TelemetryClient _telemetryClient;
+        private readonly IDownloadService _downloadService;
 
-        public TelegramWebController(ITelegramService telegramService, IBotService botService, TelemetryClient telemetryClient)
+        public TelegramWebController(ITelegramService telegramService, IBotService botService, TelemetryClient telemetryClient, IDownloadService downloadService)
         {
             _telegramService = telegramService;
             _botService = botService;
             _telemetryClient = telemetryClient;
+            _downloadService = downloadService;
         }
 
         [HttpGet("/search")]
@@ -80,67 +82,118 @@ namespace YTMusicDownloader.WebApi.Controllers
             return Ok(await _telegramService.GetReleases());
         }
 
+        //[HttpPost("/download")]
+        //public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId,
+        //    EntityType entityType = EntityType.Album)
+        //{
+        //    try
+        //    {
+        //        switch (entityType)
+        //        {
+        //            case EntityType.Album:
+        //            {
+        //                //TODO remove this workaround. Model should be passed in body
+        //                var model = new DownloadRequest
+        //                {
+        //                    UserId = userId,
+        //                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+        //                };
+        //                _telegramService.SendAlbumAsync(model);
+        //                break;
+        //            }
+        //            case EntityType.Track:
+        //            {
+        //                //TODO remove this workaround. Model should be passed in body
+        //                var model = new DownloadRequest
+        //                {
+        //                    UserId = userId,
+        //                    YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+        //                };
+        //                _telegramService.SendTrackAsync(model);
+        //                break;
+        //            }
+        //        }
+
+        //        return Ok();
+        //    }
+        //    catch(Exception exception) 
+        //    {
+        //        await _botService.Client.SendTextMessageAsync(new ChatId(userId),
+        //            "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
+
+        //        return Ok();
+        //    }
+
+        //    return Ok();
+        //}
+
+        //[HttpPost("/download-set")]
+        //public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
+        //{
+        //    //try
+        //    //{
+        //        _telegramService.SendTracksSetAsync(request);
+
+        //        return Ok();
+        //    //}
+        //    //catch
+        //    //{
+        //    //    await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
+        //    //        "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
+
+        //    //    return Ok();
+        //    //}
+        //}
+
         [HttpPost("/download")]
-        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId,
-            EntityType entityType = EntityType.Album)
+        public async Task<IActionResult> Download(string youTubeMusicPlaylistUrl, long userId, CancellationToken cancellationToken,
+       EntityType entityType = EntityType.Album)
         {
             try
             {
                 switch (entityType)
                 {
                     case EntityType.Album:
-                    {
-                        //TODO remove this workaround. Model should be passed in body
-                        var model = new DownloadRequest
                         {
-                            UserId = userId,
-                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                        };
-                        _telegramService.SendAlbumAsync(model);
-                        break;
-                    }
+                            //TODO remove this workaround. Model should be passed in body
+                            var model = new DownloadRequest
+                            {
+                                UserId = userId,
+                                YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                            };
+                            _downloadService.SendAlbumAsync(model, cancellationToken);
+                            break;
+                        }
                     case EntityType.Track:
-                    {
-                        //TODO remove this workaround. Model should be passed in body
-                        var model = new DownloadRequest
                         {
-                            UserId = userId,
-                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                        };
-                        _telegramService.SendTrackAsync(model);
-                        break;
-                    }
+                            //TODO remove this workaround. Model should be passed in body
+                            var model = new DownloadRequest
+                            {
+                                UserId = userId,
+                                YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                            };
+                            _downloadService.SendTrackAsync(model, cancellationToken);
+                            break;
+                        }
                 }
 
                 return Ok();
             }
-            catch(Exception exception) 
+            catch (Exception)
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
                     "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
 
                 return Ok();
             }
-
-            return Ok();
         }
 
         [HttpPost("/download-set")]
-        public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request)
+        public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request, CancellationToken cancellationToken)
         {
-            //try
-            //{
-                _telegramService.SendTracksSetAsync(request);
+            _downloadService.SendTracksSetAsync(request, cancellationToken);
 
-                return Ok();
-            //}
-            //catch
-            //{
-            //    await _botService.Client.SendTextMessageAsync(new ChatId(request.UserId),
-            //        "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
-
-            //    return Ok();
-            //}
+            return Ok();
         }
 
         [HttpGet("/artists")]
