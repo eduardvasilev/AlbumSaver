@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,8 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using YoutubeExplode;
+using YoutubeExplode.Playlists;
 using YTMusicAPI.Model;
 using YTMusicAPI.Model.Infrastructure;
 using YTMusicDownloader.WebApi.Model;
@@ -71,7 +74,24 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         [HttpGet("/album/tracks")]
         public async Task<IActionResult> TracksByAlbum(string albumUrl, CancellationToken cancellationToken)
         {
-            return Ok(await _tracksService.GetAlbumTracksAsync(albumUrl, cancellationToken));
+
+            var tracks = await _tracksService.GetAlbumTracksAsync(albumUrl, cancellationToken);
+            var result = new AlbumTracksResultObject<IEnumerable<MusicSearchResult>>(tracks.Result.Select(x => new MusicSearchResult
+            {
+                Author = x.Author.ToString(),
+                ImageUrl = x.ImageUrl,
+                Title = x.Title,
+                YouTubeMusicPlaylistUrl = x.YouTubeMusicPlaylistUrl,
+            }));
+
+            var youtube = new YoutubeClient();
+            var album = await youtube.Playlists.GetAsync(PlaylistId.Parse(albumUrl));
+            result.AlbumImage = album.Thumbnails.Skip(1).FirstOrDefault()?.Url;
+            result.AlbumImageConst = tracks.Result.FirstOrDefault()?.ImageUrl;
+            result.AlbumTitle = album.Title;
+            result.ChannelUrl = album.Author?.ChannelId;
+            result.ArtistName = album.Author?.Title;
+            return Ok(result);
         }
 
         //TODO migrate to lib
