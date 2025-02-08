@@ -18,13 +18,13 @@ using YTMusicDownloader.WebApi.Model;
 using YTMusicDownloader.WebApi.Services;
 using EntityType = YTMusicDownloader.WebApi.Model.EntityType;
 
-namespace YTMusicDownloader.WebApi.Controllers.V2
+namespace YTMusicDownloader.WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [ApiVersion(1)]
-    public class TelegramWebController : ControllerBase 
-    { 
+    public class TelegramWebController : ControllerBase
+    {
         private readonly ISearchService _searchService;
         private readonly ITracksService _tracksService;
         private readonly IArtistsService _artistsService;
@@ -49,12 +49,12 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
             string continuationToken,
             string token, CancellationToken cancellationToken)
         {
-           return Ok(await _searchService.SearchAlbumsAsync(new QueryRequest
-           {
-               Query = query,
-               ContinuationData = new ContinuationData(continuationToken, token),
-               ContinuationNeed = continuation
-           }, cancellationToken));
+            return Ok(await _searchService.SearchAlbumsAsync(new QueryRequest
+            {
+                Query = query,
+                ContinuationData = new ContinuationData(continuationToken, token),
+                ContinuationNeed = continuation
+            }, cancellationToken));
         }
 
 
@@ -134,32 +134,32 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
                 switch (entityType)
                 {
                     case EntityType.Album:
-                    {
-                        //TODO remove this workaround. Model should be passed in body
-                        var model = new DownloadRequest
                         {
-                            UserId = userId,
-                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                        };
-                        _downloadService.SendAlbumAsync(model, cancellationToken);
-                        break;
-                    }
+                            //TODO remove this workaround. Model should be passed in body
+                            var model = new DownloadRequest
+                            {
+                                UserId = userId,
+                                YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                            };
+                            _downloadService.SendAlbumAsync(model, cancellationToken);
+                            break;
+                        }
                     case EntityType.Track:
-                    {
-                        //TODO remove this workaround. Model should be passed in body
-                        var model = new DownloadRequest
                         {
-                            UserId = userId,
-                            YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
-                        };
-                        _downloadService.SendTrackAsync(model, cancellationToken);
-                        break;
-                    }
+                            //TODO remove this workaround. Model should be passed in body
+                            var model = new DownloadRequest
+                            {
+                                UserId = userId,
+                                YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
+                            };
+                            _downloadService.SendTrackAsync(model, cancellationToken);
+                            break;
+                        }
                 }
 
                 return Ok();
             }
-            catch(Exception) 
+            catch (Exception)
             {
                 await _botService.Client.SendTextMessageAsync(new ChatId(userId),
                     "We're sorry. Something went wrong during sending. Please try again or use /feedback command to describe your issue.");
@@ -200,7 +200,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         //    }
         //    return Ok(albumsByArtistAsync);
         //}  
-        
+
         [HttpGet("/artists/image")]
         public async Task<IActionResult> GetArtistImage(string channelUrl, CancellationToken cancellationToken)
         {
@@ -211,7 +211,7 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
         [HttpPost("/callback")]
         public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
-            Update? update;
+            Update update;
             try
             {
                 update = JsonConvert.DeserializeObject<Update>(request.ToString());
@@ -225,9 +225,9 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
             if (update is { PreCheckoutQuery: { } })
             {
                 var preCheckoutQuery = update.PreCheckoutQuery;
-                await _botService.Client.AnswerPreCheckoutQueryAsync(
+                await _botService.Client.AnswerPreCheckoutQuery(
                     preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
-                await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+                await _botService.Client.SendMessage(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
                 return Ok();
             }
 
@@ -236,14 +236,14 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
             if (inputText?.StartsWith("/feedback") == true)
             {
 
-                await _botService.Client.SendTextMessageAsync(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
+                await _botService.Client.SendMessage(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
                     new ForceReplyMarkup(), cancellationToken: cancellationToken);
                 return Ok();
             }
 
             if (update?.Message?.ReplyToMessage != null && update?.Message?.ReplyToMessage.Text == feedbackText && update?.Message?.Text != null)
             {
-                await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
+                await _botService.Client.SendMessage(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
                 return Ok();
             }
 
