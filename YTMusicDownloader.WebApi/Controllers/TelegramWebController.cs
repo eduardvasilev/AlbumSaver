@@ -23,7 +23,7 @@ namespace YTMusicDownloader.WebApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [ApiVersion(1)]
+    //[ApiVersion(1)]
     public class TelegramWebController : ControllerBase
     {
         private readonly ISearchService _searchService;
