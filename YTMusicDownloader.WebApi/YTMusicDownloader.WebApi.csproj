@@ -16,7 +16,7 @@
     <PackageReference Include="NRedisStack" Version="0.13.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
     <PackageReference Include="System.Text.Json" Version="9.0.1" />
-    <PackageReference Include="Telegram.Bot" Version="22.1.1" />
+    <PackageReference Include="Telegram.Bot" Version="22.3.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />

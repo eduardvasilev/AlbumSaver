@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Asp.Versioning;
 using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
-using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
