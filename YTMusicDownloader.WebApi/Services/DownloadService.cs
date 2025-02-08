@@ -142,6 +142,6 @@ public class DownloadService : IDownloadService
         DownloadSetRequest request;
         await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
             "Support us so we can add new features. Use /feedback command for your suggestions",
-            Guid.NewGuid().ToString(), null, "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
+            Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
     }
 }
