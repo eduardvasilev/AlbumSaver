@@ -28,7 +28,7 @@ namespace YTMusicDownloader.WebApi.Controllers
         // POST api/update
         [HttpPost]
 
-        public async Task<IActionResult> Post([FromBody] Update request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
             Update? update;
             try

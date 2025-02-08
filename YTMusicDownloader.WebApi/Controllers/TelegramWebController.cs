@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using AngleSharp.Io;
 using Asp.Versioning;
 using Microsoft.ApplicationInsights;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.ReplyMarkups;
@@ -208,8 +210,19 @@ namespace YTMusicDownloader.WebApi.Controllers
 
 
         [HttpPost("/callback")]
-        public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
+        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
+
+            Update? update;
+            try
+            {
+                update = JsonConvert.DeserializeObject<Update>(request.ToString());
+
+            }
+            catch (Exception)
+            {
+                return Ok();
+            }
 
             if (update is { PreCheckoutQuery: { } })
             {
