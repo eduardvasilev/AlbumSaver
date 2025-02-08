@@ -209,7 +209,6 @@ namespace YTMusicDownloader.WebApi.Controllers.V2
 
 
         [HttpPost("/callback")]
-
         public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
             Update? update;

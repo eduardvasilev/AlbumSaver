@@ -28,18 +28,8 @@ namespace YTMusicDownloader.WebApi.Controllers
 
         [HttpPost("/callback")]
 
-        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
+        public async Task<IActionResult> Post([FromBody] Update update, CancellationToken cancellationToken)
         {
-            Update? update;
-            try
-            {
-                update = JsonConvert.DeserializeObject<Update>(request.ToString());
-
-            }
-            catch (Exception)
-            {
-                return Ok();
-            }
 
             if (update is { PreCheckoutQuery: { } })
             {
