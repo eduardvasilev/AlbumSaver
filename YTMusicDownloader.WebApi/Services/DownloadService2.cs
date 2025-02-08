@@ -73,7 +73,7 @@ public class DownloadService2 : IDownloadService
                 InputFileUrl inputOnlineFile = new InputFileUrl(cover);
 
                 await _botService.Client.SendPhotoAsync(request.UserId,
-                    inputOnlineFile, caption: $"{result.AlbumTitle}", cancellationToken: cancellationToken);
+                    inputOnlineFile, cancellationToken: cancellationToken);
             }
 
             foreach (var track in result.Tracks)
