@@ -219,7 +219,7 @@ namespace YTMusicDownloader.WebApi.Controllers
             }
             catch (Exception)
             {
-                return Ok();
+                return BadRequest();
             }
 
             if (update is { PreCheckoutQuery: { } })
