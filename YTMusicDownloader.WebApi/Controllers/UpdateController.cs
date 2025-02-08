@@ -16,20 +16,18 @@ namespace YTMusicDownloader.WebApi.Controllers
     [ApiExplorerSettings(IgnoreApi = true)]
     public class UpdateController : Controller
     {
-        private readonly IUpdateService _updateService;
         private readonly IBotService _botService;
 
-        public UpdateController(IUpdateService updateService, IBotService botService)
+        public UpdateController(IBotService botService)
         {
-            _updateService = updateService;
             _botService = botService;
         }
 
-        // POST api/update
-        [HttpPost]
 
+        [HttpPost()]
         public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
+
             Update? update;
             try
             {
@@ -44,29 +42,32 @@ namespace YTMusicDownloader.WebApi.Controllers
             if (update is { PreCheckoutQuery: { } })
             {
                 var preCheckoutQuery = update.PreCheckoutQuery;
-                await _botService.Client.AnswerPreCheckoutQueryAsync(
+                await _botService.Client.AnswerPreCheckoutQuery(
                     preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
-                await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+                await _botService.Client.SendMessage(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+                return Ok();
             }
+
             var inputText = update?.Message?.Text ?? update?.CallbackQuery?.Data;
             const string feedbackText = "Please describe your idea or issue.";
             if (inputText?.StartsWith("/feedback") == true)
             {
 
-                await _botService.Client.SendTextMessageAsync(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
+                await _botService.Client.SendMessage(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
                     new ForceReplyMarkup(), cancellationToken: cancellationToken);
                 return Ok();
             }
 
             if (update?.Message?.ReplyToMessage != null && update?.Message?.ReplyToMessage.Text == feedbackText && update?.Message?.Text != null)
             {
-                await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
+                await _botService.Client.SendMessage(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
                 return Ok();
             }
-            
+
+            //call and forget
             return Ok();
         }
 
- 
+
     }
 }
