@@ -150,7 +150,7 @@ public class DownloadService2 : IDownloadService
 
         await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
-        var sendAudioAsync = await _botService.Client.SendAudio(chatId, new InputFileStream(stream, track.Title),
+        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title),
             cancellationToken: CancellationToken.None,
             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
@@ -173,8 +173,8 @@ public class DownloadService2 : IDownloadService
     private async Task SendDonateMessage(long userId)
     {
         DownloadSetRequest request;
-        await _botService.Client.SendInvoice(userId, "Buy us a coffee",
+        await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
             "Support us so we can add new features. Use /feedback command for your suggestions",
-            Guid.NewGuid().ToString(), "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
+            Guid.NewGuid().ToString(), null, "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
     }
 }

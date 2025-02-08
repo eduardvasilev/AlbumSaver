@@ -42,9 +42,9 @@ namespace YTMusicDownloader.WebApi.Controllers
             if (update is { PreCheckoutQuery: { } })
             {
                 var preCheckoutQuery = update.PreCheckoutQuery;
-                await _botService.Client.AnswerPreCheckoutQuery(
+                await _botService.Client.AnswerPreCheckoutQueryAsync(
                     preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
-                await _botService.Client.SendMessage(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+                await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
                 return Ok();
             }
 
@@ -53,14 +53,14 @@ namespace YTMusicDownloader.WebApi.Controllers
             if (inputText?.StartsWith("/feedback") == true)
             {
 
-                await _botService.Client.SendMessage(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
+                await _botService.Client.SendTextMessageAsync(update?.Message?.Chat.Id ?? update.CallbackQuery?.Message.Chat.Id, feedbackText, replyMarkup:
                     new ForceReplyMarkup(), cancellationToken: cancellationToken);
                 return Ok();
             }
 
             if (update?.Message?.ReplyToMessage != null && update?.Message?.ReplyToMessage.Text == feedbackText && update?.Message?.Text != null)
             {
-                await _botService.Client.SendMessage(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
+                await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
                 return Ok();
             }
 
