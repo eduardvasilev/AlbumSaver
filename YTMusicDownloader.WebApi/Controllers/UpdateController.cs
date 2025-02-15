@@ -16,20 +16,18 @@ namespace YTMusicDownloader.WebApi.Controllers
     [ApiExplorerSettings(IgnoreApi = true)]
     public class UpdateController : Controller
     {
-        private readonly IUpdateService _updateService;
         private readonly IBotService _botService;
 
-        public UpdateController(IUpdateService updateService, IBotService botService)
+        public UpdateController(IBotService botService)
         {
-            _updateService = updateService;
             _botService = botService;
         }
 
-        // POST api/update
-        [HttpPost]
 
-        public async Task<IActionResult> Post([FromBody] Update request, CancellationToken cancellationToken)
+        [HttpPost()]
+        public async Task<IActionResult> Post([FromBody] object request, CancellationToken cancellationToken)
         {
+
             Update? update;
             try
             {
@@ -47,7 +45,9 @@ namespace YTMusicDownloader.WebApi.Controllers
                 await _botService.Client.AnswerPreCheckoutQueryAsync(
                     preCheckoutQueryId: preCheckoutQuery.Id, cancellationToken: cancellationToken);
                 await _botService.Client.SendTextMessageAsync(-911492578, $"Donate from @{preCheckoutQuery.From.Username}: \n\r{preCheckoutQuery.TotalAmount} {preCheckoutQuery.Currency}", cancellationToken: cancellationToken);
+                return Ok();
             }
+
             var inputText = update?.Message?.Text ?? update?.CallbackQuery?.Data;
             const string feedbackText = "Please describe your idea or issue.";
             if (inputText?.StartsWith("/feedback") == true)
@@ -63,10 +63,11 @@ namespace YTMusicDownloader.WebApi.Controllers
                 await _botService.Client.SendTextMessageAsync(-911492578, $"Feedback from @{update?.Message?.Chat.Username}: \n\r{update?.Message?.Text}", cancellationToken: cancellationToken);
                 return Ok();
             }
-            
+
+            //call and forget
             return Ok();
         }
 
- 
+
     }
 }

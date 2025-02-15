@@ -11,6 +11,7 @@ using YTMusicAPI.Abstraction;
 using YTMusicDownloader.WebApi.Services;
 using Asp.Versioning;
 using YTMusicDownloader.WebApi.Services.Telegram;
+using YoutubeExplode;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -26,23 +27,35 @@ namespace YTMusicDownloader.WebApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<IUpdateService, UpdateService>();
+            //services.AddScoped<IUpdateService, UpdateService>();
             services.AddScoped<ISearchService, SearchService>();
             services.AddScoped<ITracksService, TracksService>();
             services.AddScoped<IReleasesClient, ReleasesClient>();
             services.AddScoped<IArtistsService, ArtistsService>();
             services.AddSingleton<IBotService, BotService>();
-            services.AddScoped<ITelegramService, TelegramService>();
+            //services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
-            services.AddScoped<IDownloadService, DownloadService>();
+            services.AddScoped<IDownloadService, DownloadService2>();
+            services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
-            services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
             services.Configure<BackupBackendOptions>(Configuration.GetSection("BackupBackend"));
             services.Configure<PaymentOptions>(Configuration.GetSection("Payment"));
+            var redisConfig = Configuration.GetSection("Redis");
+            services.Configure<RedisOptions>(redisConfig);
+
+            if (redisConfig.GetValue<bool>("Enabled"))
+            {
+                services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
+            }
+            else
+            {
+                services.AddSingleton<ITelegramFilesService, MockTelegramFilesService>();
+            }
+
             services.AddHealthChecks();
             services.AddControllers()
                 .AddNewtonsoftJson();
@@ -61,19 +74,19 @@ namespace YTMusicDownloader.WebApi
 
             services.AddMvc();
 
-            services.AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = new ApiVersion(1);
-                options.ReportApiVersions = true;
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ApiVersionReader = ApiVersionReader.Combine(
-                    new UrlSegmentApiVersionReader(),
-                    new HeaderApiVersionReader("X-Api-Version"));
-            }).AddApiExplorer(options =>
-            {
-                options.GroupNameFormat = "'v'V";
-                options.SubstituteApiVersionInUrl = true;
-            });
+            //services.AddApiVersioning(options =>
+            //{
+            //    options.DefaultApiVersion = new ApiVersion(1);
+            //    options.ReportApiVersions = true;
+            //    options.AssumeDefaultVersionWhenUnspecified = true;
+            //    options.ApiVersionReader = ApiVersionReader.Combine(
+            //        new UrlSegmentApiVersionReader(),
+            //        new HeaderApiVersionReader("X-Api-Version"));
+            //}).AddApiExplorer(options =>
+            //{
+            //    options.GroupNameFormat = "'v'V";
+            //    options.SubstituteApiVersionInUrl = true;
+            //});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
