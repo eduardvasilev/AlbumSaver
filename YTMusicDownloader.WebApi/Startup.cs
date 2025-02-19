@@ -9,9 +9,11 @@ using System;
 using YTMusicAPI;
 using YTMusicAPI.Abstraction;
 using YTMusicDownloader.WebApi.Services;
-using Asp.Versioning;
 using YTMusicDownloader.WebApi.Services.Telegram;
 using YoutubeExplode;
+using YTMusicDownloader.WebApi.Services.Streams;
+using YTMusicDownloader.WebApi.Services.Streams.Abstraction;
+using YTMusicDownloader.WebApi.Services.Streams.Providers;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -33,11 +35,15 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<IReleasesClient, ReleasesClient>();
             services.AddScoped<IArtistsService, ArtistsService>();
             services.AddSingleton<IBotService, BotService>();
-            //services.AddScoped<ITelegramService, TelegramService>();
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
             services.AddScoped<IDownloadService, DownloadService2>();
+            
+            services.AddScoped<IStreamProvider, ExplodeProvider>();
+            services.AddScoped<IStreamProvider, YTMusicProvider>();
+            services.AddScoped<StreamFactory>();
+
             services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
@@ -73,20 +79,6 @@ namespace YTMusicDownloader.WebApi
             services.AddApplicationInsightsTelemetry();
 
             services.AddMvc();
-
-            //services.AddApiVersioning(options =>
-            //{
-            //    options.DefaultApiVersion = new ApiVersion(1);
-            //    options.ReportApiVersions = true;
-            //    options.AssumeDefaultVersionWhenUnspecified = true;
-            //    options.ApiVersionReader = ApiVersionReader.Combine(
-            //        new UrlSegmentApiVersionReader(),
-            //        new HeaderApiVersionReader("X-Api-Version"));
-            //}).AddApiExplorer(options =>
-            //{
-            //    options.GroupNameFormat = "'v'V";
-            //    options.SubstituteApiVersionInUrl = true;
-            //});
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

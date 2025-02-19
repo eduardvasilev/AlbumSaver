@@ -22,6 +22,8 @@ using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
 using YTMusicAPI.Utils;
 using YTMusicDownloader.WebApi.Model;
+using YTMusicDownloader.WebApi.Services.Streams;
+using YTMusicDownloader.WebApi.Services.Streams.Abstraction;
 using YTMusicDownloader.WebApi.Services.Telegram;
 using EntityType = YTMusicAPI.Model.EntityType;
 using Video = YoutubeExplode.Videos.Video;
@@ -37,8 +39,12 @@ public class DownloadService2 : IDownloadService
     private readonly HttpClient _httpClient;
     private readonly YoutubeClient _youtubeClient;
     private readonly ITelegramFilesService _telegramFilesService;
+    private readonly StreamFactory _streamFactory;
+
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, ITelegramFilesService telegramFilesService)
+        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, 
+        YoutubeClient youtubeClient, ITelegramFilesService telegramFilesService,
+        StreamFactory streamFactory)
     {
         _botService = botService;
         _trackClient = trackClient;
@@ -47,6 +53,7 @@ public class DownloadService2 : IDownloadService
         _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
         _telegramFilesService = telegramFilesService;
+        _streamFactory = streamFactory;
     }
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
@@ -148,7 +155,7 @@ public class DownloadService2 : IDownloadService
             return;
         }
 
-        await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
+        await using Stream stream = await GetAudioStreamAsync(track.Url, cancellationToken);
 
         var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title),
             cancellationToken: CancellationToken.None,
@@ -159,15 +166,9 @@ public class DownloadService2 : IDownloadService
         await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
 
-    public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
+    private async Task<Stream> GetAudioStreamAsync(string trackUrl, CancellationToken cancellationToken)
     {
-        StreamManifest streamManifest =
-            await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
-
-        IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-        var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo, cancellationToken);
-        return stream;
+      return await _streamFactory.GetStreamAsync(trackUrl, cancellationToken);
     }
 
     private async Task SendDonateMessage(long userId)

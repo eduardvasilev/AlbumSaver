@@ -29,7 +29,7 @@ public class MockTelegramFilesService : ITelegramFilesService
 {
     public Task<string> GetFileIdAsync(string trackUrl)
     {
-        return null;
+        return Task.FromResult((string)null);
     }
 
     public Task SetFileIdAsync(string trackUrl, string fileId)
