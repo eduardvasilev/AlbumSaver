@@ -142,7 +142,7 @@ namespace YTMusicDownloader.WebApi.Controllers
                                 UserId = userId,
                                 YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
                             };
-                            await _downloadService.SendAlbumAsync(model, cancellationToken);
+                            _downloadService.SendAlbumAsync(model, cancellationToken);
                             break;
                         }
                     case EntityType.Track:

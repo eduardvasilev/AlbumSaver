@@ -23,7 +23,7 @@ using EntityType = YTMusicAPI.Model.EntityType;
 
 namespace YTMusicDownloader.WebApi.Services;
 
-public class DownloadService : IDownloadService
+public class SenderService : IDownloadService
 {
     private readonly IBotService _botService;
     private readonly ITrackClient _trackClient;
@@ -31,7 +31,7 @@ public class DownloadService : IDownloadService
     private readonly IBackupBackendService _backupBackendService;
     private readonly HttpClient _httpClient;
 
-    public DownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
+    public SenderService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
         IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService)
     {
         _botService = botService;
