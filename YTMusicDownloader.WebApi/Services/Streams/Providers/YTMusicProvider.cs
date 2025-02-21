@@ -13,18 +13,21 @@ namespace YTMusicDownloader.WebApi.Services.Streams.Providers;
 public class YTMusicProvider : IStreamProvider
 {
     private readonly ITrackClient _trackClient;
-    private DownloadConfiguration _downloadOpt;
+    private readonly HttpClient _httpClient;
+    private DownloadService _downloader;
 
     public YTMusicProvider(ITrackClient trackClient, IHttpClientFactory httpClientFactory)
     {
         _trackClient = trackClient;
+        _httpClient = httpClientFactory.CreateClient();
         
-        _downloadOpt = new DownloadConfiguration()
+        var downloadOpt = new DownloadConfiguration()
         {
             ChunkCount = 8, // Number of file parts, default is 1
             ParallelDownload = true // Download parts in parallel (default is false)
         };
         
+        _downloader = new DownloadService(downloadOpt);
         
     }
 
@@ -35,9 +38,8 @@ public class YTMusicProvider : IStreamProvider
         var trackInfo = await _trackClient.GetTrackInfoAsync(audioUrl, cancellationToken);
 
         var audio = trackInfo.Streams.Where(x => x.AudioQuality != null).MaxBy(x => x.Bitrate);
-
-        await using var downloader = new DownloadService(_downloadOpt);
-        var stream = await downloader.DownloadFileTaskAsync(audio.Url, cancellationToken);
+        var stream = await _downloader.DownloadFileTaskAsync(audio.Url, cancellationToken);
+        await _downloader.DisposeAsync();
         return stream;
     }
 }
