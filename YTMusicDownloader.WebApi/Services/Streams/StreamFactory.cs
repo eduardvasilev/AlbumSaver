@@ -36,6 +36,6 @@ public class StreamFactory
             }
         }
         
-        return null;
+        return await Task.FromResult<Stream>(null);
     }
 }
