@@ -37,8 +37,11 @@ public class YTMusicProvider : IStreamProvider
     {
         var trackInfo = await _trackClient.GetTrackInfoAsync(audioUrl, cancellationToken);
 
-        var audio = trackInfo.Streams.Where(x => x.AudioQuality != null).MaxBy(x => x.Bitrate);
-        var stream = await _downloader.DownloadFileTaskAsync(audio.Url, cancellationToken);
-        return stream;
+        await using (_downloader)
+        {
+            var audio = trackInfo.Streams.Where(x => x.AudioQuality != null).MaxBy(x => x.Bitrate);
+            var stream = await _downloader.DownloadFileTaskAsync(audio.Url, cancellationToken);
+            return stream;
+        }
     }
 }
