@@ -14,6 +14,8 @@ using YoutubeExplode;
 using YTMusicDownloader.WebApi.Services.Streams;
 using YTMusicDownloader.WebApi.Services.Streams.Abstraction;
 using YTMusicDownloader.WebApi.Services.Streams.Providers;
+using AspNetCoreRateLimit;
+using System.Collections.Generic;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -80,6 +82,22 @@ namespace YTMusicDownloader.WebApi
 
             services.AddMvc();
 
+            services.AddMemoryCache();
+            services.Configure<IpRateLimitOptions>(options =>
+            {
+                options.GeneralRules = new List<RateLimitRule>
+        {
+            new RateLimitRule
+            {
+                Endpoint = "*",
+                Limit = 200,
+                Period = "5m"
+            }
+        };
+            });
+            services.AddInMemoryRateLimiting();
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -109,6 +127,7 @@ namespace YTMusicDownloader.WebApi
             });
 
             app.UseHealthChecks("/health");
+            app.UseIpRateLimiting();
         }
     }
 }
