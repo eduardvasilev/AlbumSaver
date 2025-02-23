@@ -2,7 +2,7 @@
 using System;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Sentry;
+// using Sentry;
 using YTMusicDownloader.WebApi.Model;
 
 namespace YTMusicDownloader.WebApi.Services;
@@ -23,7 +23,7 @@ public class BackupBackendService : IBackupBackendService
     {
         if (_options.Value.Enabled)
         {
-            SentrySdk.CaptureMessage("Going to backup service");
+            // SentrySdk.CaptureMessage("Going to backup service");
             var response = await _client.PostAsync($"/download?youTubeMusicPlaylistUrl={musicUrl}&userId={userId}&entityType={entityType}",
                 null);
             return response.IsSuccessStatusCode;

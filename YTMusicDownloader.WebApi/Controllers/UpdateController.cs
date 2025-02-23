@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
-using Sentry;
+// using Sentry;
 using Telegram.Bot;
 using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
@@ -70,7 +70,7 @@ namespace YTMusicDownloader.WebApi.Controllers
             }
             catch (Exception)
             {
-                SentrySdk.CaptureMessage("Webhook is broken");
+                // SentrySdk.CaptureMessage("Webhook is broken");
 
                 return Ok();
             }
