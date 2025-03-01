@@ -5,8 +5,6 @@ VisualStudioVersion = 17.2.32630.192
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "YTMusicDownloader.WebApi", "YTMusicDownloader.WebApi\YTMusicDownloader.WebApi.csproj", "{7346CB54-445F-44EF-8B83-310BA1BBB9C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AlbumSaver.Console.Tester", "AlbumSaver.Console.Tester\AlbumSaver.Console.Tester.csproj", "{CAB49BD2-1B85-4241-A876-65E1162B9943}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,10 +15,6 @@ Global
 		{7346CB54-445F-44EF-8B83-310BA1BBB9C2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7346CB54-445F-44EF-8B83-310BA1BBB9C2}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7346CB54-445F-44EF-8B83-310BA1BBB9C2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{CAB49BD2-1B85-4241-A876-65E1162B9943}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{CAB49BD2-1B85-4241-A876-65E1162B9943}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{CAB49BD2-1B85-4241-A876-65E1162B9943}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{CAB49BD2-1B85-4241-A876-65E1162B9943}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
