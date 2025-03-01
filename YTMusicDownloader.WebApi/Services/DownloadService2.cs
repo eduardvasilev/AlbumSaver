@@ -157,7 +157,7 @@ public class DownloadService2 : IDownloadService
 
         await using Stream stream = await GetAudioStreamAsync(track.Url, cancellationToken);
 
-        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title),
+        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
             cancellationToken: CancellationToken.None,
             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
