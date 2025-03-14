@@ -121,8 +121,8 @@ public class DownloadService2 : IDownloadService
 
             if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
             {
-                await _botService.Client.SendTextMessageAsync(chatId,
-                    $"Sorry, we couldn't send the track: {track.Title}. Our service may be blocked. But we will definitely be back");
+                //await _botService.Client.SendTextMessageAsync(chatId,
+                //    $"Sorry, we couldn't send the track: {track.Title}. Our service may be blocked. But we will definitely be back");
             }
         }
     }
