@@ -54,7 +54,7 @@ public class DownloadService2 : IDownloadService
         AlbumTracksResult result;
         try
         {
-            result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, cancellationToken);
+            result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, CancellationToken.None);
         }
         catch (Exception exception)
         {
@@ -73,14 +73,14 @@ public class DownloadService2 : IDownloadService
                 InputFileUrl inputOnlineFile = new InputFileUrl(cover);
 
                 await _botService.Client.SendPhotoAsync(request.UserId,
-                    inputOnlineFile, cancellationToken: cancellationToken);
+                    inputOnlineFile);
             }
 
             foreach (var track in result.Tracks)
             {
-                var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), cancellationToken);
+                var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
 
-                await SendTrackAsync(request.UserId, trackInfo, cancellationToken);
+                await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
             }
 
             await SendDonateMessage(request.UserId);
