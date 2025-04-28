@@ -17,6 +17,7 @@ using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
+using YTMusicAPI;
 using YTMusicAPI.Abstraction;
 using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
@@ -78,9 +79,24 @@ public class DownloadService2 : IDownloadService
 
             foreach (var track in result.Tracks)
             {
-                var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
+                try
+                {
+                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
 
-                await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
+                    await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
+
+                }
+                catch (Exception exception)
+                {
+                    {
+                        if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
+                        {
+                            throw exception;
+                        }
+                    }
+                    continue;
+
+                }
             }
 
             await SendDonateMessage(request.UserId);
