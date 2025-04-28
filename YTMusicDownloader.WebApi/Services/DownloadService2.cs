@@ -79,24 +79,9 @@ public class DownloadService2 : IDownloadService
 
             foreach (var track in result.Tracks)
             {
-                try
-                {
-                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
+                var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
 
-                    await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
-
-                }
-                catch (Exception exception)
-                {
-                    {
-                        if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
-                        {
-                            throw exception;
-                        }
-                    }
-                    continue;
-
-                }
+                await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
             }
 
             await SendDonateMessage(request.UserId);
