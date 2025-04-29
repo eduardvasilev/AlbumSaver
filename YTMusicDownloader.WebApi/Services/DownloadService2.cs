@@ -37,14 +37,16 @@ public class DownloadService2 : IDownloadService
     private readonly IBackupBackendService _backupBackendService;
     private readonly HttpClient _httpClient;
     private readonly YoutubeClient _youtubeClient;
+    private readonly IPaymentService _paymentService;
     //private readonly ITelegramFilesService _telegramFilesService;
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient)
+        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
     {
         _botService = botService;
         _trackClient = trackClient;
         _telemetryClient = telemetryClient;
         _backupBackendService = backupBackendService;
+        _paymentService = paymentService;
         _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
         //_telegramFilesService = telegramFilesService;
@@ -84,7 +86,7 @@ public class DownloadService2 : IDownloadService
                 await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
             }
 
-            await SendDonateMessage(request.UserId);
+            await _paymentService.SendDonateMessageAsync(request.UserId);
         }
     }
 
@@ -92,7 +94,7 @@ public class DownloadService2 : IDownloadService
     {
         var track = await _youtubeClient.Videos.GetAsync(VideoId.Parse(model.YouTubeMusicPlaylistUrl), cancellationToken);
         await SendTrackAsync(model.UserId, track, cancellationToken);
-        await SendDonateMessage(model.UserId);
+        await _paymentService.SendDonateMessageAsync(model.UserId);
     }
 
     public async Task SendTracksSetAsync(DownloadSetRequest request, CancellationToken cancellationToken)
@@ -104,7 +106,7 @@ public class DownloadService2 : IDownloadService
             await SendTrackAsync(request.UserId, result, cancellationToken);
         }
 
-        await SendDonateMessage(request.UserId);
+        await _paymentService.SendDonateMessageAsync(request.UserId);
     }
 
     public async Task SendTrackAsync(long chatId, Video track, CancellationToken cancellationToken)
@@ -171,11 +173,5 @@ public class DownloadService2 : IDownloadService
         return stream;
     }
 
-    private async Task SendDonateMessage(long userId)
-    {
-        DownloadSetRequest request;
-        await _botService.Client.SendInvoiceAsync(userId, "Buy us a coffee",
-            "Support us so we can add new features. Use /feedback command for your suggestions",
-            Guid.NewGuid().ToString(), "", "XTR", new List<LabeledPrice>() { new("Donate us", 1) });
-    }
+
 }
