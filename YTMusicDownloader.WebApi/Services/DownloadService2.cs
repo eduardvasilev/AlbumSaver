@@ -15,6 +15,7 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.Payments;
 using YoutubeExplode;
 using YoutubeExplode.Common;
+using YoutubeExplode.Exceptions;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
 using YTMusicAPI;
@@ -81,9 +82,17 @@ public class DownloadService2 : IDownloadService
 
             foreach (var track in result.Tracks)
             {
-                var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
+                try
+                {
+                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
 
-                await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
+                    await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
+                }
+                catch(VideoUnavailableException videoUnavailableException )
+                {
+                    await _backupBackendService.TrySendMusicAsync(request.UserId, track.Url, Model.EntityType.Track);
+                }
+             
             }
 
             await _paymentService.SendDonateMessageAsync(request.UserId);
