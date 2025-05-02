@@ -122,7 +122,7 @@ public class DownloadService2 : IDownloadService
     {
         try
         {
-            InputFileUrl thumbnail = new InputFileUrl(track.Thumbnails.ToList().Min(x => x.Resolution)?.Url);
+            InputFileUrl thumbnail = new InputFileUrl((track.Thumbnails.ToList().MinBy(x => x.Resolution.Area)?.Url) ?? track.Thumbnails.ToList().FirstOrDefault().Url);
 
             await SendSongInternalAsync(chatId, track, thumbnail, cancellationToken);
         }
