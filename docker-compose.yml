@@ -1,12 +1,22 @@
 services:
   backend:
     build: .
+    volumes:
+      - ./cookies:/app/cookies:ro
     container_name: musicsaver_backend
     networks:
       - musicsaver-network
   frontend:
     image: 'nginx:alpine'
     container_name: musicsaver_frontend
+    environment:
+         NGINX_LOG_OUTPUT: 'file'
+         NGINX_LOG_TYPE: 'main'
+         NGINX_USER: 'root'
+         VIEW_CONFIG: "yes"
+         USE_NGINX_THROTTLE: "yes"
+         NGINX_THROTTLE_BY_IP: "yes"
+         NGINX_RATE_LIMIT: "200r/s"
     volumes:
       - './nginx.conf:/etc/nginx/nginx.conf:ro'
       - '/var/log/letsencrypt/:/var/log/letsencrypt'
@@ -22,13 +32,6 @@ services:
       - '443:443'
     networks:
       - musicsaver-network
-  redis:
-    image: redis:latest
-    container_name: musicsaver_redis
-    ports:
-      - "6379:6379"
-    command: ["redis-server", "--appendonly", "no", "--maxmemory", "50mb", "--maxmemory-policy", "allkeys-lru"]
-         
 networks:
   musicsaver-network:
     external: true
