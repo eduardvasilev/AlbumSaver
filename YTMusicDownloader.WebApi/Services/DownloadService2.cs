@@ -1,4 +1,5 @@
-﻿using Microsoft.ApplicationInsights;
+﻿using AngleSharp.Io;
+using Microsoft.ApplicationInsights;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -101,7 +102,18 @@ public class DownloadService2 : IDownloadService
 
     public async Task SendTrackAsync(DownloadRequest model, CancellationToken cancellationToken)
     {
-        var track = await _youtubeClient.Videos.GetAsync(VideoId.Parse(model.YouTubeMusicPlaylistUrl), cancellationToken);
+        Video track;
+        try
+        {
+            track = await _youtubeClient.Videos.GetAsync(VideoId.Parse(model.YouTubeMusicPlaylistUrl), cancellationToken);
+        }
+        catch
+        {
+            await _backupBackendService.TrySendMusicAsync(model.UserId, model.YouTubeMusicPlaylistUrl, Model.EntityType.Track);
+            await _paymentService.SendDonateMessageAsync(model.UserId);
+            return;
+
+        }
         await SendTrackAsync(model.UserId, track, cancellationToken);
         await _paymentService.SendDonateMessageAsync(model.UserId);
     }
