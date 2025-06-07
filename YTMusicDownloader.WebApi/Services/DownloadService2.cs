@@ -96,6 +96,8 @@ public class DownloadService2 : IDownloadService
              
             }
 
+            Task.WaitAll();
+
             await _paymentService.SendDonateMessageAsync(request.UserId);
         }
     }
