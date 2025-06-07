@@ -63,6 +63,8 @@ public class DownloadService2 : IDownloadService
         }
         catch (Exception exception)
         {
+            await _botService.Client.SendTextMessageAsync(111718761, $"This is {exception.GetType()}");
+
             if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
             {
                 throw exception;
@@ -91,6 +93,7 @@ public class DownloadService2 : IDownloadService
                 }
                 catch(VideoUnavailableException videoUnavailableException )
                 {
+                    await _botService.Client.SendTextMessageAsync(111718761, "This is video unavaliable");
                     await _backupBackendService.TrySendMusicAsync(request.UserId, track.Url, Model.EntityType.Track);
                 }
              
