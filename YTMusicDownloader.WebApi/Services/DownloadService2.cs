@@ -142,8 +142,6 @@ public class DownloadService2 : IDownloadService
         {
             _telemetryClient.TrackException(exception);
 
-            await _botService.Client.SendTextMessageAsync(111718761, $"This is {exception.GetType()}");
-
 
             if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
             {
