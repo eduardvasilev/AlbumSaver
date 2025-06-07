@@ -59,12 +59,10 @@ public class DownloadService2 : IDownloadService
         AlbumTracksResult result;
         try
         {
-            result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, CancellationToken.None);
+            result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, default);
         }
         catch (Exception exception)
         {
-            await _botService.Client.SendTextMessageAsync(111718761, $"This is {exception.GetType()}");
-
             if (!await _backupBackendService.TrySendMusicAsync(request.UserId, request.YouTubeMusicPlaylistUrl, Model.EntityType.Album))
             {
                 throw exception;
@@ -87,18 +85,15 @@ public class DownloadService2 : IDownloadService
             {
                 try
                 {
-                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), CancellationToken.None);
+                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), default);
 
-                    await SendTrackAsync(request.UserId, trackInfo, CancellationToken.None);
+                    await SendTrackAsync(request.UserId, trackInfo, default);
                 }
                 catch(VideoUnavailableException videoUnavailableException )
                 {
-                    await _botService.Client.SendTextMessageAsync(111718761, "This is video unavaliable");
                     await _backupBackendService.TrySendMusicAsync(request.UserId, track.Url, Model.EntityType.Track);
                 }
-             
             }
-
 
             await _paymentService.SendDonateMessageAsync(request.UserId);
         }
@@ -146,6 +141,9 @@ public class DownloadService2 : IDownloadService
         catch (Exception exception)
         {
             _telemetryClient.TrackException(exception);
+
+            await _botService.Client.SendTextMessageAsync(111718761, $"This is {exception.GetType()}");
+
 
             if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
             {
