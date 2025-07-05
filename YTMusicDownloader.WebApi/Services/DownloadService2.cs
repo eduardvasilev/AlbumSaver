@@ -79,7 +79,7 @@ public class DownloadService2 : IDownloadService
                 InputFileUrl inputOnlineFile = new InputFileUrl(cover);
 
                 await _botService.Client.SendPhotoAsync(request.UserId,
-                    inputOnlineFile);
+                     inputOnlineFile, caption: result.AlbumTitle);
             }
 
             foreach (var track in result.Tracks)
@@ -187,7 +187,7 @@ public class DownloadService2 : IDownloadService
     public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
     {
         StreamManifest streamManifest =
-            await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
+            await new YoutubeClient().Videos.Streams.GetManifestAsync(videoId);
 
         IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
 
