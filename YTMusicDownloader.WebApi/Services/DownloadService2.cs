@@ -44,7 +44,6 @@ public class DownloadService2 : IDownloadService
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
         IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
     {
-        //var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
         _botService = botService;
         _trackClient = trackClient;
         _telemetryClient = telemetryClient;
