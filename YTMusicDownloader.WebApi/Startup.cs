@@ -56,6 +56,19 @@ namespace YTMusicDownloader.WebApi
                 services.AddSingleton<ITelegramFilesService, MockTelegramFilesService>();
             }
 
+
+            var allowedOrigins = Configuration.GetSection("AllowedOrigins").Get<string[]>();
+
+            services.AddCors(options =>
+            {
+                options.AddPolicy("MyCorsPolicy", policy =>
+                {
+                    policy.WithOrigins(allowedOrigins!)
+                          .AllowAnyHeader()
+                          .AllowAnyMethod();
+                });
+            });
+
             services.AddHealthChecks();
             services.AddControllers()
                 .AddNewtonsoftJson();
@@ -98,10 +111,10 @@ namespace YTMusicDownloader.WebApi
             }
 
             app.UseRouting();
-            app.UseCors(x => x
-                .AllowAnyOrigin()
-                .AllowAnyMethod()
-                .AllowAnyHeader());
+
+            app.UseCors("MyCorsPolicy");
+
+            app.UseAuthorization();
 
             app.UseSwagger();
 
@@ -116,6 +129,7 @@ namespace YTMusicDownloader.WebApi
             });
 
             app.UseHealthChecks("/health");
+
         }
     }
 }
