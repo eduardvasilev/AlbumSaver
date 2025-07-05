@@ -44,13 +44,13 @@ public class DownloadService2 : IDownloadService
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
         IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
     {
-        var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
+        //var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
         _botService = botService;
         _trackClient = trackClient;
         _telemetryClient = telemetryClient;
         _backupBackendService = backupBackendService;
         _paymentService = paymentService;
-        _youtubeClient = new YoutubeClient(cookies);
+        _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
         //_telegramFilesService = telegramFilesService;
     }
@@ -173,30 +173,19 @@ public class DownloadService2 : IDownloadService
         //    return;
         //}
 
-       // await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
-        var url =
-            await _youtubeClient.Videos.Streams.GetHttpLiveStreamUrlAsync(track.Id, cancellationToken);
-        using(var httpClient = new HttpClient())
-        {
-            using (var stream = await _httpClient.GetStreamAsync(url, cancellationToken))
-            {
-                var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId,
-       new InputFileStream(stream, track.Title + ".mp3"),
-       cancellationToken: CancellationToken.None,
-       duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-       parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
-       performer: author, protectContent: false);
-            }
-   
-        }
+        await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
+
+        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
+            cancellationToken: CancellationToken.None,
+            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
+            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
+            performer: author, protectContent: false);
+
         //await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
 
     public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
     {
-        var url =
-            await _youtubeClient.Videos.Streams.GetHttpLiveStreamUrlAsync(videoId, cancellationToken);
-
         StreamManifest streamManifest =
             await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
 
