@@ -112,6 +112,8 @@ namespace YTMusicDownloader.WebApi
 
             app.UseRouting();
 
+            app.UseHttpsRedirection();
+
             app.UseCors("MyCorsPolicy");
 
             app.UseAuthorization();
