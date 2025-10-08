@@ -86,7 +86,8 @@ public class DownloadService2 : IDownloadService
             {
                 try
                 {
-                    var trackInfo = await _youtubeClient.Videos.GetAsync(VideoId.Parse(track.Url), default);
+
+                    var trackInfo  = await _trackClient.GetTrackInfoAsync(track.Url, cancellationToken);
 
                     await SendTrackAsync(request.UserId, trackInfo, default);
                 }
@@ -102,10 +103,12 @@ public class DownloadService2 : IDownloadService
 
     public async Task SendTrackAsync(DownloadRequest model, CancellationToken cancellationToken)
     {
-        Video track;
+        Track track;
         try
         {
-            track = await _youtubeClient.Videos.GetAsync(VideoId.Parse(model.YouTubeMusicPlaylistUrl), cancellationToken);
+
+            track = await _trackClient.GetTrackInfoAsync(VideoId.Parse(model.YouTubeMusicPlaylistUrl), default);
+
         }
         catch
         {
@@ -122,7 +125,7 @@ public class DownloadService2 : IDownloadService
     {
         foreach (var requestUrl in request.Urls)
         {
-            var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(requestUrl), cancellationToken);
+            Track result = await _trackClient.GetTrackInfoAsync(VideoId.Parse(requestUrl), default);
 
             await SendTrackAsync(request.UserId, result, cancellationToken);
         }
@@ -130,11 +133,11 @@ public class DownloadService2 : IDownloadService
         await _paymentService.SendDonateMessageAsync(request.UserId);
     }
 
-    public async Task SendTrackAsync(long chatId, Video track, CancellationToken cancellationToken)
+    public async Task SendTrackAsync(long chatId, Track track, CancellationToken cancellationToken)
     {
         try
         {
-            InputFileUrl thumbnail = new InputFileUrl((track.Thumbnails.ToList().MinBy(x => x.Resolution.Area)?.Url) ?? track.Thumbnails.ToList().FirstOrDefault().Url);
+            InputFileUrl thumbnail = new InputFileUrl((track.Thumbnails.ToList().MinBy(x => x.Resolution.Width)?.Url) ?? track.Thumbnails.ToList().FirstOrDefault().Url);
 
             await SendSongInternalAsync(chatId, track, thumbnail, cancellationToken);
         }
@@ -152,9 +155,9 @@ public class DownloadService2 : IDownloadService
         }
     }
 
-    private async Task SendSongInternalAsync(long chatId, YoutubeExplode.Videos.Video track, InputFileUrl thump, CancellationToken cancellationToken)
+    private async Task SendSongInternalAsync(long chatId, Track track, InputFileUrl thump, CancellationToken cancellationToken)
     {
-        string author = track.Author.ChannelTitle;
+        string author = track.Author;
         var topic = " - Topic";
         if (author != null && author.EndsWith(topic))
         {
