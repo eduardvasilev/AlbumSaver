@@ -1,5 +1,6 @@
 ﻿using AngleSharp.Io;
 using Microsoft.ApplicationInsights;
+using RTools_NTS.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -40,9 +41,11 @@ public class DownloadService2 : IDownloadService
     private readonly HttpClient _httpClient;
     private readonly YoutubeClient _youtubeClient;
     private readonly IPaymentService _paymentService;
+    private readonly StreamDownloader _streamDownloader;
     //private readonly ITelegramFilesService _telegramFilesService;
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
+        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, 
+        IPaymentService paymentService, StreamDownloader streamDownloader)
     {
         //var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
         _botService = botService;
@@ -52,7 +55,7 @@ public class DownloadService2 : IDownloadService
         _paymentService = paymentService;
         _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
-        //_telegramFilesService = telegramFilesService;
+        _streamDownloader = streamDownloader;
     }
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
@@ -182,29 +185,24 @@ public class DownloadService2 : IDownloadService
 
         //await using MemoryStream stream = await DownloadStreamToMemoryAsync(streamInfo.Url);
 
+        //await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
-        try{
-            await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
-            var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
-                cancellationToken: CancellationToken.None,
-                duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-                parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
-                performer: author, protectContent: false);
-        }
-        catch
-        {
-            await using Stream stream = await _httpClient.GetStreamAsync(streamInfo.Url, cancellationToken);
-            var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
-             cancellationToken: CancellationToken.None,
-             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
-             performer: author, protectContent: false);
-        }
+        var progress = new Progress<double>(p => Console.WriteLine($"Progress: {p:P1}"));
+
+        var memoryStream = await _streamDownloader.DownloadInChunksAsync(
+            streamInfo.Url,
+            chunkSize: 1_000_000,
+            progress: progress,
+            cancellationToken: CancellationToken.None);
 
 
 
-
+        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(memoryStream, track.Title + ".mp3"),
+            cancellationToken: CancellationToken.None,
+            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
+            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
+            performer: author, protectContent: false);
 
         //await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
