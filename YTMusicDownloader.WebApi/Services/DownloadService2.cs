@@ -1,6 +1,5 @@
 ﻿using AngleSharp.Io;
 using Microsoft.ApplicationInsights;
-using RTools_NTS.Util;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,11 +40,9 @@ public class DownloadService2 : IDownloadService
     private readonly HttpClient _httpClient;
     private readonly YoutubeClient _youtubeClient;
     private readonly IPaymentService _paymentService;
-    private readonly StreamDownloader _streamDownloader;
     //private readonly ITelegramFilesService _telegramFilesService;
     public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, 
-        IPaymentService paymentService, StreamDownloader streamDownloader)
+        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
     {
         //var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
         _botService = botService;
@@ -55,7 +52,7 @@ public class DownloadService2 : IDownloadService
         _paymentService = paymentService;
         _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
-        _streamDownloader = streamDownloader;
+        //_telegramFilesService = telegramFilesService;
     }
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
@@ -187,10 +184,11 @@ public class DownloadService2 : IDownloadService
 
         //await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
+        var downloader = new StreamDownloader();
 
         var progress = new Progress<double>(p => Console.WriteLine($"Progress: {p:P1}"));
 
-        var memoryStream = await _streamDownloader.DownloadInChunksAsync(
+        var memoryStream = await downloader.DownloadInChunksAsync(
             streamInfo.Url,
             chunkSize: 1_000_000,
             progress: progress,

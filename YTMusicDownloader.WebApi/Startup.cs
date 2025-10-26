@@ -37,6 +37,7 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<ISearchClient, SearchClient>();
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
+            services.AddTransient<StreamDownloader>();
             services.AddScoped<IDownloadService, DownloadService2>();
             services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
