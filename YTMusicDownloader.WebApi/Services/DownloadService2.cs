@@ -188,7 +188,7 @@ public class DownloadService2 : IDownloadService
 
         var progress = new Progress<double>(p => Console.WriteLine($"Progress: {p:P1}"));
 
-        var memoryStream = await downloader.DownloadInChunksAsync(
+        await using var memoryStream = await downloader.DownloadInChunksAsync(
             streamInfo.Url,
             chunkSize: 1_000_000,
             progress: progress,
