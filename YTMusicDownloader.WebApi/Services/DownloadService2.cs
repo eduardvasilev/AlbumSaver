@@ -182,15 +182,29 @@ public class DownloadService2 : IDownloadService
 
         //await using MemoryStream stream = await DownloadStreamToMemoryAsync(streamInfo.Url);
 
-        await using Stream stream = await _httpClient.GetStreamAsync(streamInfo.Url, cancellationToken);
 
-        //await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
+        try{
+            await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
-        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
-            cancellationToken: CancellationToken.None,
-            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
-            performer: author, protectContent: false);
+            var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
+                cancellationToken: CancellationToken.None,
+                duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
+                parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
+                performer: author, protectContent: false);
+        }
+        catch
+        {
+            await using Stream stream = await _httpClient.GetStreamAsync(streamInfo.Url, cancellationToken);
+            var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
+             cancellationToken: CancellationToken.None,
+             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
+             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
+             performer: author, protectContent: false);
+        }
+
+
+
+
 
         //await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
