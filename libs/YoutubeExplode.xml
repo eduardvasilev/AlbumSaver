@@ -1936,5 +1936,8 @@
             Operations related to YouTube search.
             </summary>
         </member>
+        <member name="M:YoutubeExplode.YoutubeClient.Dispose">
+            <inheritdoc />
+        </member>
     </members>
 </doc>

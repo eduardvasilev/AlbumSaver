@@ -176,7 +176,15 @@ public class DownloadService2 : IDownloadService
         //    return;
         //}
 
-        await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
+        var trackInfo = await _trackClient.GetTrackInfoAsync(track.Url, cancellationToken);
+
+        var streamInfo = trackInfo.Streams.MaxBy(x => x.AudioQuality);
+
+        //await using MemoryStream stream = await DownloadStreamToMemoryAsync(streamInfo.Url);
+
+        await using Stream stream = await _httpClient.GetStreamAsync(streamInfo.Url, cancellationToken);
+
+        //await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
 
         var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
             cancellationToken: CancellationToken.None,
@@ -199,4 +207,15 @@ public class DownloadService2 : IDownloadService
     }
 
 
+    public async Task<MemoryStream> DownloadStreamToMemoryAsync(string url)
+    {
+        using var http = new HttpClient();
+        var response = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead);
+        response.EnsureSuccessStatusCode();
+
+        var memoryStream = new MemoryStream();
+        await response.Content.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+        return memoryStream;
+    }
 }
