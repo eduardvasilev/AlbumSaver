@@ -1,65 +1,34 @@
-﻿using Microsoft.ApplicationInsights;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.Payments;
-using YoutubeExplode;
 using YoutubeExplode.Common;
-using YoutubeExplode.Exceptions;
-using YoutubeExplode.Videos;
-using YoutubeExplode.Videos.Streams;
-using YTMusicAPI;
 using YTMusicAPI.Abstraction;
 using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
-using YTMusicAPI.Utils;
 using YTMusicDownloader.WebApi.Model;
-using YTMusicDownloader.WebApi.Services.Telegram;
-using EntityType = YTMusicAPI.Model.EntityType;
 using Video = YoutubeExplode.Videos.Video;
 
 namespace YTMusicDownloader.WebApi.Services;
 
-public class YTDLPDownloadService : IDownloadService
+public class YTDLPDownloadService(IBotService botService, ITrackClient trackClient,
+    IPaymentService paymentService) : IDownloadService
 {
-    private readonly IBotService _botService;
-    private readonly ITrackClient _trackClient;
-    private readonly TelemetryClient _telemetryClient;
-    private readonly IBackupBackendService _backupBackendService;
-    private readonly HttpClient _httpClient;
-    private readonly YoutubeClient _youtubeClient;
-    private readonly IPaymentService _paymentService;
-    //private readonly ITelegramFilesService _telegramFilesService;
-    public YTDLPDownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
-    {
-        _botService = botService;
-        _trackClient = trackClient;
-        _telemetryClient = telemetryClient;
-        _backupBackendService = backupBackendService;
-        _paymentService = paymentService;
-        _youtubeClient = new YoutubeClient();
-        _httpClient = httpClientFactory.CreateClient();
-        //_telegramFilesService = telegramFilesService;
-    }
+    private readonly IBotService _botService = botService;
+    private readonly ITrackClient _trackClient = trackClient;
+    private readonly IPaymentService _paymentService = paymentService;
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
 
         AlbumTracksResult result = await _trackClient.GetAlbumTracksAsync(request.YouTubeMusicPlaylistUrl, CancellationToken.None);
-
 
         if (result != null && result.Tracks.Any())
         {
@@ -83,19 +52,16 @@ public class YTDLPDownloadService : IDownloadService
 
     public async Task SendTrackAsync(DownloadRequest model, CancellationToken cancellationToken)
     {
-        if (!await TrySendTrackYtDlp(model.UserId, model.YouTubeMusicPlaylistUrl))
-        {
-            //  await _backupBackendService.TrySendMusicAsync(model.UserId, model.YouTubeMusicPlaylistUrl, Model.EntityType.Track);
-        }
+        await TrySendTrackYtDlp(model.UserId, model.YouTubeMusicPlaylistUrl);
     }
 
     public async Task SendTracksSetAsync(DownloadSetRequest request, CancellationToken cancellationToken)
     {
         foreach (var requestUrl in request.Urls)
         {
-            var result = await _youtubeClient.Videos.GetAsync(VideoId.Parse(requestUrl), cancellationToken);
+            var track = await  _trackClient.GetTrackInfoAsync(requestUrl, cancellationToken);
+            await TrySendWithYTDLP(request.UserId, track, new InputFileUrl(track.Thumbnails.MinBy(x => x.Resolution.Width).Url), cancellationToken);
 
-            await SendTrackAsync(request.UserId, result, cancellationToken);
         }
 
         await _paymentService.SendDonateMessageAsync(request.UserId);
@@ -104,61 +70,8 @@ public class YTDLPDownloadService : IDownloadService
     public async Task SendTrackAsync(long chatId, Video track, CancellationToken cancellationToken)
     {
         InputFileUrl thumbnail = new InputFileUrl((track.Thumbnails.ToList().MinBy(x => x.Resolution.Area)?.Url) ?? track.Thumbnails.ToList().FirstOrDefault().Url);
-
-        try
-        {
-            await SendSongInternalAsync(chatId, track, thumbnail, cancellationToken);
-        }
-
-        catch (Exception exception)
-        {
-
-            var song = await _trackClient.GetTrackInfoAsync(track.Url, cancellationToken);
-            if (!await TrySendWithYTDLP(chatId, song, thumbnail, cancellationToken))
-            {
-                _telemetryClient.TrackException(exception);
-
-                if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
-                {
-                    //await _botService.Client.SendTextMessageAsync(chatId,
-                    //    $"Sorry, we couldn't send the track: {track.Title}. Our service may be blocked. But we will definitely be back");
-                }
-            }
-
-
-        }
-    }
-
-    private async Task SendSongInternalAsync(long chatId, YoutubeExplode.Videos.Video track, InputFileUrl thump, CancellationToken cancellationToken)
-    {
-        string author = track.Author.ChannelTitle;
-        var topic = " - Topic";
-        if (author != null && author.EndsWith(topic))
-        {
-            author = author.Substring(0, author.Length - topic.Length);
-        }
-
-        //string fileId = await _telegramFilesService.GetFileIdAsync(track.Url);
-
-        //if (fileId != null)
-        //{
-        //    await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
-        //            cancellationToken: CancellationToken.None,
-        //            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-        //            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true, performer: track.Author.ChannelTitle);
-
-        //    return;
-        //}
-
-        await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
-
-        var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(stream, track.Title + ".mp3"),
-            cancellationToken: CancellationToken.None,
-            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
-            performer: author, protectContent: false);
-
-        //await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
+        var song = await _trackClient.GetTrackInfoAsync(track.Url, cancellationToken);
+        await TrySendWithYTDLP(chatId, song, thumbnail, cancellationToken);
     }
 
     private async Task<bool> TrySendWithYTDLP(long chatId, Track track, InputFileUrl thump, CancellationToken cancellationToken)
@@ -182,40 +95,6 @@ public class YTDLPDownloadService : IDownloadService
         catch
         {
             return false;
-        }
-
-    }
-
-    public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
-    {
-        StreamManifest streamManifest =
-            await _youtubeClient.Videos.Streams.GetManifestAsync(videoId, cancellationToken);
-
-        IStreamInfo streamInfo = streamManifest.GetAudioOnlyStreams().GetWithHighestBitrate();
-
-        var stream = await _youtubeClient.Videos.Streams.GetAsync(streamInfo, cancellationToken);
-        return stream;
-    }
-
-    private async Task<bool> TrySendAlbumWithYTLDP(long chatId, string albumUrl, CancellationToken cancellation)
-    {
-        try
-        {
-            var tracks = await GetPlaylistVideoUrlsAsync(albumUrl);
-
-            foreach (var track in tracks)
-            {
-                await TrySendTrackYtDlp(chatId, track);
-            }
-            return true;
-        }
-        catch (Exception ex)
-        {
-            {
-
-                await _botService.Client.SendTextMessageAsync(chatId, ex.Message);
-                return false;
-            }
         }
 
     }
@@ -304,7 +183,7 @@ public class YTDLPDownloadService : IDownloadService
 
         process.Start();
 
-        var stream = new MemoryStream(); // ← БЕЗ using
+        var stream = new MemoryStream();
 
         await process.StandardOutput.BaseStream.CopyToAsync(stream);
         string error = await process.StandardError.ReadToEndAsync();
@@ -321,8 +200,16 @@ public class YTDLPDownloadService : IDownloadService
         return stream.Length > 0 ? stream : null;
     }
 
-
-
+    /// <summary>
+    /// Gets metadata for the specified video URL by invoking the external yt-dlp process,
+    /// reading its JSON output and deserializing it into a dictionary.
+    /// </summary>
+    /// <param name="url">The video or playlist URL to query with yt-dlp.</param>
+    /// <returns>
+    /// A dictionary of metadata keys to values parsed from yt-dlp's JSON output.
+    /// Returns <c>null</c> when the yt-dlp process could not be started.
+    /// </returns>
+    /// <exception cref="Exception">Thrown when yt-dlp exits with a non-zero code.</exception>
     public async Task<Dictionary<string, object>?> GetVideoMetadataAsync(string url)
     {
 

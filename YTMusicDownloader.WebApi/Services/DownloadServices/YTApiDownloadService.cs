@@ -1,59 +1,34 @@
-﻿using AngleSharp.Io;
-using Microsoft.ApplicationInsights;
+﻿using Microsoft.ApplicationInsights;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
-using Telegram.Bot.Requests.Abstractions;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using Telegram.Bot.Types.Payments;
 using YoutubeExplode;
 using YoutubeExplode.Common;
 using YoutubeExplode.Exceptions;
 using YoutubeExplode.Videos;
 using YoutubeExplode.Videos.Streams;
-using YTMusicAPI;
 using YTMusicAPI.Abstraction;
 using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
-using YTMusicAPI.Utils;
 using YTMusicDownloader.WebApi.Model;
-using YTMusicDownloader.WebApi.Services.Telegram;
-using EntityType = YTMusicAPI.Model.EntityType;
-using Video = YoutubeExplode.Videos.Video;
 
 namespace YTMusicDownloader.WebApi.Services.DownloadServices;
 
-public class YTApiDownloadService : IDownloadService
+public class YTApiDownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
+    IBackupBackendService backupBackendService, IPaymentService paymentService) : IDownloadService
 {
-    private readonly IBotService _botService;
-    private readonly ITrackClient _trackClient;
-    private readonly TelemetryClient _telemetryClient;
-    private readonly IBackupBackendService _backupBackendService;
-    private readonly HttpClient _httpClient;
-    private readonly YoutubeClient _youtubeClient;
-    private readonly IPaymentService _paymentService;
-    //private readonly ITelegramFilesService _telegramFilesService;
-    public YTApiDownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, 
-        IBackupBackendService backupBackendService,
-        YoutubeClient youtubeClient, IPaymentService paymentService)
-    {
-        _botService = botService;
-        _trackClient = trackClient;
-        _telemetryClient = telemetryClient;
-        _backupBackendService = backupBackendService;
-        _paymentService = paymentService;
-        _youtubeClient = new YoutubeClient();
-        _httpClient = httpClientFactory.CreateClient();
-    }
+    private readonly IBotService _botService = botService;
+    private readonly ITrackClient _trackClient = trackClient;
+    private readonly TelemetryClient _telemetryClient = telemetryClient;
+    private readonly IBackupBackendService _backupBackendService = backupBackendService;
+    private readonly YoutubeClient _youtubeClient = new YoutubeClient();
+    private readonly IPaymentService _paymentService = paymentService;
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
@@ -149,8 +124,6 @@ public class YTApiDownloadService : IDownloadService
 
             if (!await _backupBackendService.TrySendMusicAsync(chatId, track.Url, Model.EntityType.Track))
             {
-                //await _botService.Client.SendTextMessageAsync(chatId,
-                //    $"Sorry, we couldn't send the track: {track.Title}. Our service may be blocked. But we will definitely be back");
             }
         }
     }
@@ -164,26 +137,9 @@ public class YTApiDownloadService : IDownloadService
             author = author.Substring(0, author.Length - topic.Length);
         }
 
-        //string fileId = await _telegramFilesService.GetFileIdAsync(track.Url);
-
-        //if (fileId != null)
-        //{
-        //    await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
-        //            cancellationToken: CancellationToken.None,
-        //            duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
-        //            parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true, performer: track.Author.ChannelTitle);
-
-        //    return;
-        //}
-
         var trackInfo = await _trackClient.GetTrackInfoAsync(track.Url, cancellationToken);
 
         var streamInfo = trackInfo.Streams.MaxBy(x => x.AudioQuality);
-
-        //await using MemoryStream stream = await DownloadStreamToMemoryAsync(streamInfo.Url);
-
-        //await using Stream stream = await GetAudioStreamAsync(track.Id, cancellationToken);
-
         var downloader = new StreamDownloader();
 
         var progress = new Progress<double>(p => Console.WriteLine($"Progress: {p:P1}"));
@@ -194,15 +150,11 @@ public class YTApiDownloadService : IDownloadService
             progress: progress,
             cancellationToken: CancellationToken.None);
 
-
-
         var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(memoryStream, track.Title + ".mp3"),
             cancellationToken: CancellationToken.None,
             duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
             parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
             performer: author, protectContent: false);
-
-        //await _telegramFilesService.SetFileIdAsync(track.Url, sendAudioAsync.Audio.FileId);
     }
 
     public async Task<Stream> GetAudioStreamAsync(VideoId videoId, CancellationToken cancellationToken)
