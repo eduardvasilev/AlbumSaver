@@ -12,6 +12,7 @@ using YTMusicDownloader.WebApi.Services;
 using Asp.Versioning;
 using YTMusicDownloader.WebApi.Services.Telegram;
 using YoutubeExplode;
+using YTMusicDownloader.WebApi.Services.DownloadServices;
 
 namespace YTMusicDownloader.WebApi
 {
@@ -38,7 +39,7 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<ITrackClient, TrackClient>();
             services.AddScoped<IArtistClient, ArtistClient>();
             services.AddTransient<StreamDownloader>();
-            services.AddScoped<IDownloadService, DownloadService2>();
+            services.AddScoped<IDownloadService, YTDLPDownloadService>();
             services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
@@ -120,11 +121,6 @@ namespace YTMusicDownloader.WebApi
             app.UseAuthorization();
 
             app.UseSwagger();
-
-            app.UseSwaggerUI(c =>
-            {
-                c.SwaggerEndpoint("/swagger/v1/swagger.json", "AlbumSaver API");
-            });
 
             app.UseEndpoints(endpoints =>
             {

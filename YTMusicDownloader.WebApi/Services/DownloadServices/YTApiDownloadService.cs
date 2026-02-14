@@ -29,9 +29,9 @@ using YTMusicDownloader.WebApi.Services.Telegram;
 using EntityType = YTMusicAPI.Model.EntityType;
 using Video = YoutubeExplode.Videos.Video;
 
-namespace YTMusicDownloader.WebApi.Services;
+namespace YTMusicDownloader.WebApi.Services.DownloadServices;
 
-public class DownloadService2 : IDownloadService
+public class YTApiDownloadService : IDownloadService
 {
     private readonly IBotService _botService;
     private readonly ITrackClient _trackClient;
@@ -41,10 +41,11 @@ public class DownloadService2 : IDownloadService
     private readonly YoutubeClient _youtubeClient;
     private readonly IPaymentService _paymentService;
     //private readonly ITelegramFilesService _telegramFilesService;
-    public DownloadService2(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
-        IHttpClientFactory httpClientFactory, IBackupBackendService backupBackendService, YoutubeClient youtubeClient, IPaymentService paymentService)
+    public YTApiDownloadService(IBotService botService, ITrackClient trackClient, TelemetryClient telemetryClient,
+        IHttpClientFactory httpClientFactory, 
+        IBackupBackendService backupBackendService,
+        YoutubeClient youtubeClient, IPaymentService paymentService)
     {
-        //var cookies = CookieParser.LoadCookiesFromTxt("./cookies.txt");
         _botService = botService;
         _trackClient = trackClient;
         _telemetryClient = telemetryClient;
@@ -52,7 +53,6 @@ public class DownloadService2 : IDownloadService
         _paymentService = paymentService;
         _youtubeClient = new YoutubeClient();
         _httpClient = httpClientFactory.CreateClient();
-        //_telegramFilesService = telegramFilesService;
     }
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
