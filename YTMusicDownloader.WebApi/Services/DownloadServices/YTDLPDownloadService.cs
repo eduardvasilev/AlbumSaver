@@ -120,7 +120,6 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         }
         catch (Exception ex)
         {
-            await _botService.Client.SendTextMessageAsync(chatId, ex.Message);
             return false;
         }
     }
