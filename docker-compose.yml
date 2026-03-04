@@ -1,6 +1,7 @@
 services:
   backend:
     build: .
+    restart: unless-stopped
     volumes:
       - ./cookies:/app/cookies:ro
     container_name: musicsaver_backend
@@ -8,6 +9,7 @@ services:
       - musicsaver-network
   frontend:
     image: 'nginx:alpine'
+    restart: unless-stopped
     container_name: musicsaver_frontend
     environment:
          NGINX_LOG_OUTPUT: 'file'
