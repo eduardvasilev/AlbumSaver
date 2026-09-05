@@ -7,7 +7,7 @@ ENV ASPNETCORE_URLS=http://+:5000
 
 RUN apt-get update && \
     apt-get install -y python3 python3-pip ffmpeg && \
-    pip3 install --break-system-packages yt-dlp
+    pip3 install --break-system-packages -U --pre yt-dlp
 
 EXPOSE 8080
 
