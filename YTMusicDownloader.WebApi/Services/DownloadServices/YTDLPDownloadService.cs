@@ -132,7 +132,8 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         try
         {
             await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
-                cancellationToken: cancellationToken,
+                cancellationToken: CancellationToken.None,
+
                 duration: duration,
                 title: title,
                 performer: performer,
@@ -181,7 +182,8 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
                 return false;
 
             var sentAudio = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(memoryStream, track.Title + ".mp3"),
-                cancellationToken: cancellationToken,
+                cancellationToken: CancellationToken.None,
+
                 duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
                 parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
                 performer: track.Author,
@@ -223,8 +225,9 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
 
             var sentAudio = await _botService.Client.SendAudioAsync(chatId,
                 new InputFileStream(memoryStream, metadata["title"].ToString() + ".mp3"),
-                cancellationToken: cancellationToken,
+                cancellationToken: CancellationToken.None,
                 duration: int.Parse(metadata["duration"].ToString()),
+
                 parseMode: ParseMode.Html, thumbnail: new InputFileUrl(metadata["thumbnail"].ToString()),
                 title: metadata["title"].ToString(), disableNotification: true,
                 performer: metadata["artist"].ToString());

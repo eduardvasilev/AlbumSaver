@@ -142,7 +142,8 @@ namespace YTMusicDownloader.WebApi.Controllers
                                 UserId = userId,
                                 YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
                             };
-                            _downloadService.SendAlbumAsync(model, cancellationToken);
+                            await _downloadService.SendAlbumAsync(model, cancellationToken);
+
                             break;
                         }
                     case EntityType.Track:
@@ -153,7 +154,8 @@ namespace YTMusicDownloader.WebApi.Controllers
                                 UserId = userId,
                                 YouTubeMusicPlaylistUrl = youTubeMusicPlaylistUrl
                             };
-                            _downloadService.SendTrackAsync(model, cancellationToken);
+                            await _downloadService.SendTrackAsync(model, cancellationToken);
+
                             break;
                         }
                 }
@@ -172,7 +174,8 @@ namespace YTMusicDownloader.WebApi.Controllers
         [HttpPost("/download-set")]
         public async Task<IActionResult> DownloadSet([FromBody] DownloadSetRequest request, CancellationToken cancellationToken)
         {
-            _downloadService.SendTracksSetAsync(request, cancellationToken);
+            await _downloadService.SendTracksSetAsync(request, cancellationToken);
+
 
             return Ok();
         }
