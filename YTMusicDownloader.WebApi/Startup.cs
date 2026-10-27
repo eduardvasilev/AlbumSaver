@@ -14,6 +14,8 @@ using YTMusicDownloader.WebApi.Services.Telegram;
 using YoutubeExplode;
 using YTMusicDownloader.WebApi.Services.DownloadServices;
 
+
+
 namespace YTMusicDownloader.WebApi
 {
     public class Startup
@@ -40,24 +42,17 @@ namespace YTMusicDownloader.WebApi
             services.AddScoped<IArtistClient, ArtistClient>();
             services.AddTransient<StreamDownloader>();
             services.AddScoped<IDownloadService, YTDLPDownloadService>();
+            services.AddSingleton<ITelegramFilesService>(_ =>
+                new TelegramFilesService(Configuration.GetConnectionString("Postgres")
+                    ?? throw new InvalidOperationException("Postgres connection string is not configured.")));
+
+
             services.AddTransient<YoutubeClient>();
             services.AddScoped<IBackupBackendService, BackupBackendService>();
             services.AddScoped<IPaymentService, PaymentService>();
             services.Configure<BotConfiguration>(Configuration.GetSection("BotConfiguration"));
             services.Configure<BackupBackendOptions>(Configuration.GetSection("BackupBackend"));
             services.Configure<PaymentOptions>(Configuration.GetSection("Payment"));
-            var redisConfig = Configuration.GetSection("Redis");
-            services.Configure<RedisOptions>(redisConfig);
-
-            if (redisConfig.GetValue<bool>("Enabled"))
-            {
-                services.AddSingleton<ITelegramFilesService, TelegramFilesService>();
-            }
-            else
-            {
-                services.AddSingleton<ITelegramFilesService, MockTelegramFilesService>();
-            }
-
 
             var allowedOrigins = Configuration.GetSection("AllowedOrigins").Get<string[]>();
 

@@ -1,12 +1,37 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    container_name: musicsaver_postgres
+    environment:
+      POSTGRES_DB: musicsaver
+      POSTGRES_USER: musicsaver
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U musicsaver -d musicsaver"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - musicsaver-network
   backend:
     build: .
     restart: unless-stopped
     volumes:
       - ./cookies:/app/cookies:ro
+    environment:
+      ConnectionStrings__Postgres: Host=postgres;Port=5432;Database=musicsaver;Username=musicsaver;Password=${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in the environment}
+
     container_name: musicsaver_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
     networks:
       - musicsaver-network
+
   frontend:
     image: 'nginx:alpine'
     restart: unless-stopped

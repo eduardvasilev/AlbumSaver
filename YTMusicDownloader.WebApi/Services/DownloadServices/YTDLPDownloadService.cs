@@ -14,16 +14,20 @@ using YTMusicAPI.Abstraction;
 using YTMusicAPI.Model;
 using YTMusicAPI.Model.Domain;
 using YTMusicDownloader.WebApi.Model;
+using YTMusicDownloader.WebApi.Services.Telegram;
+
 using Video = YoutubeExplode.Videos.Video;
 
 namespace YTMusicDownloader.WebApi.Services;
 
 public class YTDLPDownloadService(IBotService botService, ITrackClient trackClient,
-    IPaymentService paymentService) : IDownloadService
+    IPaymentService paymentService, ITelegramFilesService telegramFilesService) : IDownloadService
 {
     private readonly IBotService _botService = botService;
     private readonly ITrackClient _trackClient = trackClient;
     private readonly IPaymentService _paymentService = paymentService;
+    private readonly ITelegramFilesService _telegramFilesService = telegramFilesService;
+
 
     public async Task SendAlbumAsync(DownloadRequest request, CancellationToken cancellationToken)
     {
@@ -52,17 +56,26 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
 
     public async Task SendTrackAsync(DownloadRequest model, CancellationToken cancellationToken)
     {
-        await TrySendTrackYtDlp(model.UserId, model.YouTubeMusicPlaylistUrl);
+        await TrySendTrackYtDlp(model.UserId, model.YouTubeMusicPlaylistUrl, cancellationToken);
     }
+
 
     public async Task SendTracksSetAsync(DownloadSetRequest request, CancellationToken cancellationToken)
     {
         foreach (var requestUrl in request.Urls)
         {
-            var track = await  _trackClient.GetTrackInfoAsync(requestUrl, cancellationToken);
-            await TrySendWithYTDLP(request.UserId, track, new InputFileUrl(track.Thumbnails.MinBy(x => x.Resolution.Width).Url), cancellationToken);
+            var fileId = await _telegramFilesService.GetFileIdAsync(requestUrl);
+            if (!string.IsNullOrEmpty(fileId))
+            {
+                await _botService.Client.SendAudioAsync(request.UserId, InputFile.FromFileId(fileId),
+                    cancellationToken: cancellationToken, disableNotification: true);
+                continue;
+            }
 
+            var track = await _trackClient.GetTrackInfoAsync(requestUrl, cancellationToken);
+            await TrySendWithYTDLP(request.UserId, track, new InputFileUrl(track.Thumbnails.MinBy(x => x.Resolution.Width).Url), cancellationToken);
         }
+
 
         await _paymentService.SendDonateMessageAsync(request.UserId);
     }
@@ -78,18 +91,32 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
     {
         try
         {
-            var memoryStream = await DownloadAudioAsync(track.Url);
+            var fileId = await _telegramFilesService.GetFileIdAsync(track.Url);
+            if (!string.IsNullOrEmpty(fileId))
+            {
+                await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
+                    cancellationToken: cancellationToken,
+                    duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
+                    parseMode: ParseMode.Html, title: track.Title, disableNotification: true,
+                    performer: track.Author,
+                    protectContent: false);
+                return true;
+            }
 
+            using var memoryStream = await DownloadAudioAsync(track.Url);
+            if (memoryStream == null)
+                return false;
 
-            var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(memoryStream, track.Title + ".mp3"),
-                cancellationToken: CancellationToken.None,
+            var sentAudio = await _botService.Client.SendAudioAsync(chatId, new InputFileStream(memoryStream, track.Title + ".mp3"),
+                cancellationToken: cancellationToken,
                 duration: (track.Duration.HasValue ? (int?)track.Duration.Value.TotalSeconds : null),
                 parseMode: ParseMode.Html, thumbnail: thump, title: track.Title, disableNotification: true,
                 performer: track.Author,
                 protectContent: false);
 
-
+            await _telegramFilesService.SetFileIdAsync(track.Url, sentAudio.Audio.FileId);
             return true;
+
         }
 
         catch
@@ -99,30 +126,40 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
 
     }
 
-    private async Task<bool> TrySendTrackYtDlp(long chatId, string track)
+    private async Task<bool> TrySendTrackYtDlp(long chatId, string track, CancellationToken cancellationToken)
     {
         try
         {
-            var metadata = await GetVideoMetadataAsync(track);
-
-            using (var memoryStream = await DownloadAudioAsync(track))
+            var fileId = await _telegramFilesService.GetFileIdAsync(track);
+            if (!string.IsNullOrEmpty(fileId))
             {
-
-                var sendAudioAsync = await _botService.Client.SendAudioAsync(chatId,
-                    new InputFileStream(memoryStream, metadata["title"].ToString() + ".mp3"),
-                    cancellationToken: CancellationToken.None,
-                    duration: (int.Parse(metadata["duration"].ToString())),
-                    parseMode: ParseMode.Html, thumbnail: new InputFileUrl(metadata["thumbnail"].ToString()),
-                    title: metadata["title"].ToString(), disableNotification: true,
-                    performer: metadata["artist"].ToString());
+                await _botService.Client.SendAudioAsync(chatId, InputFile.FromFileId(fileId),
+                    cancellationToken: cancellationToken,
+                    disableNotification: true);
                 return true;
             }
+
+            var metadata = await GetVideoMetadataAsync(track);
+            using var memoryStream = await DownloadAudioAsync(track);
+            if (memoryStream == null)
+                return false;
+
+            var sentAudio = await _botService.Client.SendAudioAsync(chatId,
+                new InputFileStream(memoryStream, metadata["title"].ToString() + ".mp3"),
+                cancellationToken: cancellationToken,
+                duration: int.Parse(metadata["duration"].ToString()),
+                parseMode: ParseMode.Html, thumbnail: new InputFileUrl(metadata["thumbnail"].ToString()),
+                title: metadata["title"].ToString(), disableNotification: true,
+                performer: metadata["artist"].ToString());
+            await _telegramFilesService.SetFileIdAsync(track, sentAudio.Audio.FileId);
+            return true;
         }
-        catch (Exception ex)
+        catch
         {
             return false;
         }
     }
+
 
     private async Task<List<string>> GetPlaylistVideoUrlsAsync(string playlistUrl)
     {
