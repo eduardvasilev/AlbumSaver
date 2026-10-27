@@ -170,9 +170,11 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         {
             FileName = "yt-dlp",
             Arguments =
-                $"--extract-audio --audio-format mp3 " +
-                $"--buffer-size 16K " +
-                $"-o - --quiet --no-warnings --no-playlist \"{videoUrl}\"",
+        $"--proxy socks5://tor:9050 " +
+        $"--extract-audio --audio-format mp3 " +
+        $"--buffer-size 16K " +
+        $"-o - --quiet --no-warnings --no-playlist " +
+        $"\"{videoUrl}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
