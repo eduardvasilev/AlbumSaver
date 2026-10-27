@@ -163,42 +163,76 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
     }
 
 
-    private async Task<MemoryStream?> DownloadAudioAsync(string videoUrl)
+    private async Task<MemoryStream?> DownloadAudioAsync(
+     string videoUrl,
+     CancellationToken cancellationToken = default)
     {
-
-        var psi = new ProcessStartInfo
-        {
-            FileName = "yt-dlp",
-            Arguments =
-        $"--proxy socks5://tor:9050 " +
-        $"--extract-audio --audio-format mp3 " +
-        $"--buffer-size 16K " +
-        $"-o - --quiet --no-warnings --no-playlist " +
-        $"\"{videoUrl}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false
-        };
+        var psi = CreateYtDlpStartInfo(
+            "--extract-audio",
+            "--audio-format", "mp3",
+            "--buffer-size", "16K",
+            "-o", "-",
+            "--quiet",
+            "--no-warnings",
+            "--no-playlist",
+            videoUrl
+        );
 
         using var process = new Process { StartInfo = psi };
 
         process.Start();
 
-        var stream = new MemoryStream();
-
-        await process.StandardOutput.BaseStream.CopyToAsync(stream);
-        string error = await process.StandardError.ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        if (process.ExitCode != 0)
+        using var registration = cancellationToken.Register(() =>
         {
-            stream.Dispose();
-            throw new Exception($"yt-dlp docker failed: {error}");
-        }
+            try
+            {
+                if (!process.HasExited)
+                    process.Kill(entireProcessTree: true);
+            }
+            catch (InvalidOperationException) { }
+        });
 
-        stream.Position = 0;
-        return stream.Length > 0 ? stream : null;
+        using var stream = new MemoryStream();
+
+        // Читаем stdout и stderr параллельно, чтобы избежать deadlock.
+        var copyTask = process.StandardOutput.BaseStream.CopyToAsync(
+            stream, cancellationToken);
+
+        var errorTask = process.StandardError.ReadToEndAsync(
+            cancellationToken);
+
+        try
+        {
+            await Task.WhenAll(
+                copyTask,
+                errorTask,
+                process.WaitForExitAsync(cancellationToken));
+
+            if (process.ExitCode != 0)
+            {
+                throw new Exception(
+                    $"yt-dlp failed (exit code {process.ExitCode}): " +
+                    await errorTask);
+            }
+
+            if (stream.Length == 0)
+                return null;
+
+            stream.Position = 0;
+
+            // Возвращаем поток, который должен освободить вызывающий код.
+            return new MemoryStream(stream.ToArray());
+        }
+        catch
+        {
+            if (!process.HasExited)
+            {
+                try { process.Kill(entireProcessTree: true); }
+                catch (InvalidOperationException) { }
+            }
+
+            throw;
+        }
     }
 
     /// <summary>
@@ -218,12 +252,14 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         {
             FileName = "yt-dlp",
             Arguments =
-                $"--proxy socks5://tor:9050 " +
                 $"-j --no-warnings  \"{url}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
         };
+
+        psi.ArgumentList.Add("--proxy");
+        psi.ArgumentList.Add("socks5://tor:9050");
 
         using var process = Process.Start(psi);
         if (process == null)
@@ -240,5 +276,25 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         return JsonSerializer.Deserialize<Dictionary<string, object>>(output);
     }
 
+    private static ProcessStartInfo CreateYtDlpStartInfo(
+    params string[] arguments)
+    {
+        var psi = new ProcessStartInfo
+        {
+            FileName = "yt-dlp",
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true
+        };
+
+        psi.ArgumentList.Add("--proxy");
+        psi.ArgumentList.Add("socks5://tor:9050");
+
+        foreach (var argument in arguments)
+            psi.ArgumentList.Add(argument);
+
+        return psi;
+    }
 
 }
