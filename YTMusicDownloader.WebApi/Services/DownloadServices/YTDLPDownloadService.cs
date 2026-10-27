@@ -218,6 +218,7 @@ public class YTDLPDownloadService(IBotService botService, ITrackClient trackClie
         {
             FileName = "yt-dlp",
             Arguments =
+                $"--proxy socks5://tor:9050 " +
                 $"-j --no-warnings  \"{url}\"",
             RedirectStandardOutput = true,
             RedirectStandardError = true,
